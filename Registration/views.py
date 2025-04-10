@@ -78,7 +78,7 @@ def razorpay_webhook(request):
     if request.method != 'POST':
         return JsonResponse({'error': 'Invalid request method.'}, status=405)
 
-    # Retrieve the raw payload and the signature sent by Razorpay.
+    
     payload = request.body
     webhook_signature = request.META.get('HTTP_X_RAZORPAY_SIGNATURE')
     if not webhook_signature:

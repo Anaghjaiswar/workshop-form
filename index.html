@@ -83,13 +83,13 @@
     </div>
   </div>
 
-  <!-- result section -->
-  <div id="resultSuccess" class="result-container mt-5 alert alert-success text-center">
+  <!-- result section --> 
+  <div id="resultSuccess" class="result-container mt-5 alert alert-success text-center d-none">
     <h4>Payment Successful!</h4>
     <p>Your registration is confirmed.</p>
     <p id="successDetails"></p>
   </div>
-  <div id="resultError" class="result-container mt-5 alert alert-danger text-center">
+  <div id="resultError" class="result-container mt-5 alert alert-danger text-center d-none">
     <h4>Payment Failed!</h4>
     <p>There was an error processing your payment. Please try again.</p>
     <p id="errorDetails"></p>
@@ -147,7 +147,7 @@
         success: function(data) {
           
           let options = {
-            "key": rzp_test_B4vS8RodITmf1u, 
+            "key": data.razorpay_key, // Enter the Key ID generated from the Dashboard
             "amount": data.amount, 
             "currency": data.currency,
             "name": "Workshop Registration",
@@ -159,8 +159,8 @@
               "contact": data.contact
             },
             "handler": function (response) {
- 
-              alert("Payment successful. Payment ID: " + response.razorpay_payment_id);
+              checkPaymentStatus();
+              // alert("Payment successful. Payment ID: " + response.razorpay_payment_id);
 
             },
             "theme": {
@@ -188,18 +188,18 @@
               clearInterval(interval);
               $("#paymentSection").hide();
               if (res.payment_status === 'success') {
-                $("#resultSuccess").show();
+                $("#resultSuccess").removeClass("d-none").show();
                 $("#successDetails").html("Payment ID: " + res.payment_reference);
               } else {
-                $("#resultError").show();
+                $("#resultError").removeClass("d-none").show();
                 $("#errorDetails").html("Payment status: " + res.payment_status);
               }
             }
           },
           error: function(err) {
             clearInterval(interval);
-            $("#paymentSection").hide();
-            $("#resultError").show();
+            $("#paymentSection").addClass("d-none").hide();
+            $("#resultError").removeClass("d-none").show();
             $("#errorDetails").html("Error fetching payment status.");
           }
         });
