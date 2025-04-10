@@ -1,0 +1,39 @@
+# Python
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+env/
+venv/
+.idea/
+*.sqlite3
+
+# Django
+*.log
+*.pot
+*.py[cod]
+db.sqlite3
+/static/
+# /media/
+
+# Environment variables
+.env
+
+# VSCode settings
+.vscode/
+
+# MacOS
+.DS_Store
+
+# JetBrains IDEs
+.idea/
+
+# Pycharm
+*.iml
+
+# Coverage reports
+.coverage
+*.cover
+nosetests.xml
+coverage.xml
+*.hypothesis/

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Workshop Registration</title>
+  <!-- Bootstrap CSS (using CDN) -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+  <div class="container mt-5">
+    <h2 class="text-center mb-4">Workshop Registration</h2>
+    <!-- Registration Form -->
+    <form id="registrationForm">
+      <div class="form-group">
+        <label for="fullName">Full Name</label>
+        <input type="text" class="form-control" id="fullName" name="full_name" required>
+      </div>
+      <div class="form-group">
+        <label for="studentNumber">Student Number</label>
+        <input type="text" class="form-control" id="studentNumber" name="student_number" required>
+      </div>
+      <div class="form-group">
+        <label for="branch">Branch</label>
+        <select class="form-control" id="branch" name="branch" required>
+          <option value="">Select Branch</option>
+          <option value="CSE">CSE</option>
+          <option value="CS">CS</option>
+          <option value="CS-IT">CS-IT</option>
+          <option value="CSE-DS">CSE-DS</option>
+          <option value="CS-HINDI">CS-HINDI</option>
+          <option value="CSE-AIML">CSE-AIML</option>
+          <option value="IT">IT</option>
+          <option value="AIML">AIML</option>
+          <option value="ECE">ECE</option>
+          <option value="ME">ME</option>
+          <option value="EN">EN</option>
+          <option value="CIVIL">CIVIL</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="gender">Gender</label>
+        <select class="form-control" id="gender" name="gender" required>
+          <option value="">Select Gender</option>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="year">Year</label>
+        <select class="form-control" id="year" name="year" required>
+          <option value="">Select Year</option>
+          <option value="1st">1st Year</option>
+          <option value="2nd">2nd Year</option>
+          <option value="3rd">3rd Year</option>
+          <option value="4th">4th Year</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="phone">Phone Number</label>
+        <input type="text" class="form-control" id="phone" name="phone" required>
+      </div>
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input type="email" class="form-control" id="email" name="email" required>
+      </div>
+      <div class="form-group">
+        <label for="livingType">Living Type</label>
+        <select class="form-control" id="livingType" name="living_type" required>
+          <option value="">Select Living Type</option>
+          <option value="hosteller">Hosteller</option>
+          <option value="day scholar">Day Scholar</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Register</button>
+    </form>
+
+    <!-- Payment Section (Hidden Initially) -->
+    <div id="paymentSection" class="mt-5" style="display:none;">
+      <h4 class="text-center">Proceed to Payment</h4>
+      <button id="payButton" class="btn btn-success btn-block">Pay Now</button>
+    </div>
+  </div>
+
+  <!-- jQuery (using CDN) -->
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+  <!-- Razorpay Checkout Library -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <!-- Bootstrap JS (Optional, for additional Bootstrap components) -->
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    let registrationId; // To store the registration ID after successful registration
+
+    $("#registrationForm").submit(function(e) {
+      e.preventDefault();
+      let formData = {
+        full_name: $("#fullName").val(),
+        student_number: $("#studentNumber").val(),
+        branch: $("#branch").val(),
+        gender: $("#gender").val(),
+        year: $("#year").val(),
+        phone: $("#phone").val(),
+        email: $("#email").val(),
+        living_type: $("#livingType").val()
+      };
+
+      $.ajax({
+        url: "http://127.0.0.1:8000/api/registrations/",
+        method: "POST",
+        contentType: "application/json",
+        data: JSON.stringify(formData),
+        success: function(data) {
+          alert("Registration successful. Now proceeding to payment.");
+          registrationId = data.id;  // Save the returned registration ID
+          $("#registrationForm").hide();
+          $("#paymentSection").show();
+        },
+        error: function(err) {
+            console.error(err);
+          alert("Registration failed. Please check your inputs and try again.");
+        }
+      });
+    });
+
+    
+    $("#payButton").click(function(){
+      $.ajax({
+        url: "http://127.0.0.1:8000/api/payment-initiation/",
+        method: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({ registration_id: registrationId }),
+        success: function(data) {
+          
+          let options = {
+            "key": data.razorpay_key, 
+            "amount": data.amount, 
+            "currency": data.currency,
+            "name": "Workshop Registration",
+            "description": "Complete your payment",
+            "order_id": data.order_id, 
+            "prefill": {
+              "name": data.name,
+              "email": data.email,
+              "contact": data.contact
+            },
+            "handler": function (response) {
+              // This callback is invoked when payment is successful
+              alert("Payment successful. Payment ID: " + response.razorpay_payment_id);
+              // Here, you would typically call your Payment Verification API.
+            },
+            "theme": {
+              "color": "#3399cc"
+            }
+          };
+          let rzp = new Razorpay(options);
+          rzp.open();
+        },
+        error: function(err) {
+          alert("Payment initiation failed. Please try again later.");
+        }
+      });
+    });
+  </script>
+</body>
+</html>
