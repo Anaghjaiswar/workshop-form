@@ -31,3 +31,8 @@ class RegistrationSerializer(serializers.ModelSerializer):
 class PaymentVerificationSerializer(serializers.Serializer):
     registration_id = serializers.IntegerField()
     payment_id = serializers.CharField()
+
+class PaymentStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Registration
+        fields = ['id', 'payment_status', 'payment_reference', 'updated_at']

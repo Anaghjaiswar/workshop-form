@@ -4,7 +4,7 @@ import razorpay
 from rest_framework import status, generics
 from rest_framework.response import Response
 from .models import Registration
-from .serializers import PaymentVerificationSerializer, RegistrationSerializer
+from .serializers import PaymentVerificationSerializer, RegistrationSerializer, PaymentStatusSerializer
 import hmac
 import hashlib
 from django.conf import settings
@@ -130,3 +130,9 @@ def razorpay_webhook(request):
 
     # For other events, optionally log or handle them as needed.
     return JsonResponse({'message': 'Event not processed.'}, status=200)
+
+
+class PaymentStatusView(generics.RetrieveAPIView):
+    queryset = Registration.objects.all()
+    serializer_class = PaymentStatusSerializer
+    lookup_field = 'id'
