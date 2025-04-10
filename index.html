@@ -147,7 +147,7 @@
         success: function(data) {
           
           let options = {
-            "key": data.razorpay_key, 
+            "key": rzp_test_B4vS8RodITmf1u, 
             "amount": data.amount, 
             "currency": data.currency,
             "name": "Workshop Registration",
@@ -159,9 +159,9 @@
               "contact": data.contact
             },
             "handler": function (response) {
-              // This callback is invoked when payment is successful
+ 
               alert("Payment successful. Payment ID: " + response.razorpay_payment_id);
-              // Here, you would typically call your Payment Verification API.
+
             },
             "theme": {
               "color": "#3399cc"
