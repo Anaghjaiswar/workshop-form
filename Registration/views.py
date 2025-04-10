@@ -84,8 +84,7 @@ def razorpay_webhook(request):
     if not webhook_signature:
         return JsonResponse({'error': 'Signature missing.'}, status=400)
 
-    # Verify the signature using Razorpay's key secret.
-    key_secret = settings.RAZORPAY_SECRET.encode()
+    key_secret = settings.RAZORPAY_WEBHOOK_SECRET.encode()
     generated_signature = hmac.new(key_secret, payload, hashlib.sha256).hexdigest()
 
     if generated_signature != webhook_signature:
