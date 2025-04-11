@@ -28,11 +28,8 @@ class RegistrationSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['payment_status', 'payment_reference', 'created_at', 'updated_at', 'is_email_verified']
 
-class PaymentVerificationSerializer(serializers.Serializer):
-    registration_id = serializers.IntegerField()
-    payment_id = serializers.CharField()
 
 class PaymentStatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = Registration
-        fields = ['id', 'payment_status', 'payment_reference', 'updated_at']
+        fields = ['id', 'full_name', 'email', 'payment_status', 'payment_reference']

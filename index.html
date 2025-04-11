@@ -1,25 +1,63 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Workshop Registration</title>
   <!-- Bootstrap CSS (using CDN) -->
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <style>
+    .btn-loading {
+      pointer-events: none;
+      opacity: 0.8;
+    }
+
+    /* Adjust the spinner appearance */
+    .spinner-border {
+      display: inline-block;
+      width: 1rem;
+      height: 1rem;
+      margin-left: 8px;
+      /* Spacing between text and spinner */
+      vertical-align: middle;
+      border: 0.15em solid currentColor;
+      border-right-color: transparent;
+      /* Create a gap for spinning effect */
+      border-radius: 50%;
+      animation: spinner-border 0.75s linear infinite;
+    }
+
+    @keyframes spinner-border {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
 </head>
+
 <body>
   <div class="container mt-5">
     <h2 class="text-center mb-4">Workshop Registration</h2>
+
     <!-- Registration Form -->
     <form id="registrationForm">
+
+      <!-- full name -->
       <div class="form-group">
         <label for="fullName">Full Name</label>
-        <input type="text" class="form-control" id="fullName" name="full_name" required>
+        <input type="text" class="form-control" id="fullName" name="full_name" required pattern="^[A-Za-z\s]+$"
+          title="Please enter a valid name (letters and spaces only)" placeholder="Enter your full name">
       </div>
+
+      <!-- student number -->
       <div class="form-group">
         <label for="studentNumber">Student Number</label>
-        <input type="text" class="form-control" id="studentNumber" name="student_number" required>
+        <input type="text" class="form-control" id="studentNumber" name="student_number" required pattern="^\d+$"
+          title="Student Number must be numeric." placeholder="Enter your student number">
       </div>
+
+      <!-- branch -->
       <div class="form-group">
         <label for="branch">Branch</label>
         <select class="form-control" id="branch" name="branch" required>
@@ -38,6 +76,8 @@
           <option value="CIVIL">CIVIL</option>
         </select>
       </div>
+
+      <!-- gender -->
       <div class="form-group">
         <label for="gender">Gender</label>
         <select class="form-control" id="gender" name="gender" required>
@@ -47,6 +87,8 @@
           <option value="other">Other</option>
         </select>
       </div>
+
+      <!-- year -->
       <div class="form-group">
         <label for="year">Year</label>
         <select class="form-control" id="year" name="year" required>
@@ -57,14 +99,30 @@
           <option value="4th">4th Year</option>
         </select>
       </div>
+
+      <!-- phone number -->
       <div class="form-group">
         <label for="phone">Phone Number</label>
-        <input type="text" class="form-control" id="phone" name="phone" required>
+        <div class="input-group">
+          <div class="input-group-prepend">
+            <span class="input-group-text">+91</span>
+          </div>
+          <input type="text" class="form-control" id="phone" name="phone" required pattern="^\d{10}$"
+            title="Phone number must be exactly 10 digits." placeholder="Enter your phone number" maxlength="10">
+        </div>
       </div>
+
+      <!-- email address -->
       <div class="form-group">
         <label for="email">Email Address</label>
-        <input type="email" class="form-control" id="email" name="email" required>
+        <input type="email" class="form-control" id="email" name="email" required
+          pattern="^[a-zA-Z0-9._%+-]+@akgec\.ac\.in$" title="Email must end with @akgec.ac.in"
+          oninvalid="this.setCustomValidity('Please enter a valid email ending with @akgec.ac.in')"
+          oninput="this.setCustomValidity('')" onblur="this.reportValidity()"
+          placeholder="Enter your college email address only ending with @akgec.ac.in">
       </div>
+
+      <!-- living type -->
       <div class="form-group">
         <label for="livingType">Living Type</label>
         <select class="form-control" id="livingType" name="living_type" required>
@@ -73,8 +131,26 @@
           <option value="day scholar">Day Scholar</option>
         </select>
       </div>
-      <button type="submit" class="btn btn-primary btn-block">Register</button>
+
+      <!-- Register Button -->
+      <button type="submit" class="btn btn-primary btn-block" id="registerBtn">Register</button>
     </form>
+
+    <!-- otp section(verify email) -->
+    <div id="otpSection" class="mt-5" style="display:none;">
+      <h4 class="text-center">Verify Your Email</h4>
+      <p class="text-center">An OTP has been sent to your email. Enter it below to verify your email.</p>
+      <form id="otpForm">
+        <div class="form-group">
+          <label for="otp">Enter OTP</label>
+          <input type="text" class="form-control" id="otp" name="otp" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" id="verifyOtpBtn">Verify OTP</button>
+      </form>
+      <button type="button" id="resendOtpBtn" class="btn btn-secondary btn-block mt-3">
+        Resend OTP
+      </button>
+    </div>
 
     <!-- Payment Section (Hidden Initially) -->
     <div id="paymentSection" class="mt-5" style="display:none;">
@@ -83,7 +159,7 @@
     </div>
   </div>
 
-  <!-- result section --> 
+  <!-- result section -->
   <div id="resultSuccess" class="result-container mt-5 alert alert-success text-center d-none">
     <h4>Payment Successful!</h4>
     <p>Your registration is confirmed.</p>
@@ -94,20 +170,59 @@
     <p>There was an error processing your payment. Please try again.</p>
     <p id="errorDetails"></p>
   </div>
-</div>
 
-  <!-- jQuery (using CDN) -->
+
+  <!-- processing div -->
+  <div id="processingMessage" class="alert alert-info text-center d-none mt-3">
+    We are processing your payment, please wait...
+  </div>
+
+  <!-- scripts -->
   <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-  <!-- Razorpay Checkout Library -->
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-  <!-- Bootstrap JS (Optional, for additional Bootstrap components) -->
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
 
+  <!-- custom script -->
   <script>
     let registrationId; // To store the registration ID after successful registration
+    const BASE_URL = "https://workshop-form.onrender.com";
 
-    $("#registrationForm").submit(function(e) {
+    // Helper function to show loader on a button
+    function showLoader(btn) {
+      $(btn).addClass("btn-loading").attr("disabled", true)
+        .append('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>');
+    }
+
+    // Helper function to hide loader on a button
+    function hideLoader(btn, originalText) {
+      $(btn).removeClass("btn-loading").attr("disabled", false)
+        .html(originalText);
+    }
+
+    // Registration form submission handler
+    $("#registrationForm").submit(function (e) {
       e.preventDefault();
+
+
+      var emailInput = document.getElementById("email");
+      if (!emailInput.checkValidity()) {
+        // This will trigger the browser to display the custom error message
+        emailInput.reportValidity();
+        return; 
+      }
+
+      // If the form does not validate properly, do not continue
+      if (!this.checkValidity()) {
+        // Use native browser messages
+        this.reportValidity();
+        return;
+      }
+
+      let registerBtn = $("#registerBtn");
+      let originalBtnText = registerBtn.html();
+      showLoader(registerBtn);
+
+
       let formData = {
         full_name: $("#fullName").val(),
         student_number: $("#studentNumber").val(),
@@ -119,46 +234,118 @@
         living_type: $("#livingType").val()
       };
 
+      console.log("Form Data:", formData);
+
+
       $.ajax({
-        url: "https://workshop-form.onrender.com/api/registrations/",
+        url: `${BASE_URL}/api/registrations/`,
         method: "POST",
         contentType: "application/json",
         data: JSON.stringify(formData),
-        success: function(data) {
-          alert("Registration successful. Now proceeding to payment.");
+        success: function (data) {
+          console.log("Registration API response:", data);
           registrationId = data.id;  // Save the returned registration ID
+          console.log(registrationId);
+          alert("Registration successful. Now proceeding to payment.");
           $("#registrationForm").hide();
-          $("#paymentSection").show();
+          $("#otpSection").show(); // Show OTP section
+          $("#paymentSection").hide(); // Hide payment section until OTP is verified
+          // $("#paymentSection").show();
         },
-        error: function(err) {
-            console.error(err);
+        error: function (err) {
+          console.error("Registration API Error:", err);
           alert("Registration failed. Please check your inputs and try again.");
+        },
+        complete: function () {
+          hideLoader(registerBtn, 'Register');
+        }
+      });
+    });
+    // console.log("registration id is : ", registrationId);
+
+    // OTP form submission handler
+    $("#otpForm").submit(function (e) {
+      e.preventDefault();
+      let otp = $("#otp").val();
+      let email = $("#email").val(); // Fetch the email entered during registration
+      let verifyOtpBtn = $("#verifyOtpBtn");
+      let originalOtpBtnText = verifyOtpBtn.html();
+      showLoader(verifyOtpBtn);
+
+      $.ajax({
+        url: `${BASE_URL}/api/verify-email/`,
+        method: "PUT",
+        contentType: "application/json",
+        data: JSON.stringify({ email, otp }), // Include both email and OTP
+        success: function () {
+          alert("Email verified successfully.");
+          $("#otpSection").hide();
+          $("#paymentSection").show(); // Proceed to payment
+        },
+        error: function (err) {
+          console.error("Verify OTP API Error:", err);
+          alert("OTP verification failed. Please check the OTP and try again.");
+        },
+        complete: function () {
+          hideLoader(verifyOtpBtn, 'Verify OTP');
         }
       });
     });
 
-    
-    $("#payButton").click(function(){
+    // Resend OTP button click handler
+    $("#resendOtpBtn").click(function () {
+      let resendOtpBtn = $(this);
+      let originalText = resendOtpBtn.html();
+      showLoader(resendOtpBtn);
+
       $.ajax({
-        url: "https://workshop-form.onrender.com/api/payment-initiation/",
+        url: `${BASE_URL}/api/resend-otp/`,
+        method: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({ email: $("#email").val().trim() }),
+        success: function (data) {
+          alert("OTP has been resent successfully.");
+        },
+        error: function (err) {
+          console.error("Resend OTP API error:", err);
+          alert("Error resending OTP. Please try again.");
+        },
+        complete: function () {
+          hideLoader(resendOtpBtn, originalText);
+        }
+      });
+    });
+
+    // Payment button click handler
+    $("#payButton").click(function () {
+
+      let payButton = $(this);
+      let originalPayBtnText = payButton.html();
+      showLoader(payButton);
+
+
+      $.ajax({
+        url: `${BASE_URL}/api/payment-initiation/`,
         method: "POST",
         contentType: "application/json",
         data: JSON.stringify({ registration_id: registrationId }),
-        success: function(data) {
-          
+        success: function (data) {
+          console.log("Payment initiation response:", data);
+
           let options = {
             "key": data.razorpay_key, // Enter the Key ID generated from the Dashboard
-            "amount": data.amount, 
+            "amount": data.amount,
             "currency": data.currency,
             "name": "Workshop Registration",
             "description": "Complete your payment",
-            "order_id": data.order_id, 
+            "order_id": data.order_id,
             "prefill": {
               "name": data.name,
               "email": data.email,
               "contact": data.contact
             },
             "handler": function (response) {
+              console.log("Payment handler response:", response);
               checkPaymentStatus();
               // alert("Payment successful. Payment ID: " + response.razorpay_payment_id);
 
@@ -170,41 +357,58 @@
           let rzp = new Razorpay(options);
           rzp.open();
         },
-        error: function(err) {
+        error: function (err) {
+          console.error("Payment initiation API error:", err);
           alert("Payment initiation failed. Please try again later.");
+        },
+        complete: function () {
+          hideLoader(payButton, 'Pay Now');
         }
       });
     });
+
     // Function to check payment status via the Payment Status API
     function checkPaymentStatus() {
-      // Polling interval: adjust as needed
-      let interval = setInterval(function() {
+      console.log("Checking payment status...");
+      $("#paymentSection").hide();
+      $("#processingMessage").removeClass("d-none").show();
+      let interval = setInterval(function () {
         $.ajax({
-          url: "https://workshop-form.onrender.com/api/payment-status/" + registrationId + "/",
+          url: `${BASE_URL}/api/payment-status/${registrationId}/`,
           method: "GET",
-          success: function(res) {
-            // If payment status is no longer 'pending', stop polling and show result
+          success: function (res) {
+            console.log("Payment status URL:", `${BASE_URL}/api/payment-status/${registrationId}/`),
+              console.log("Payment status response received:", res);
+            console.log("Payment status:", res.payment_status);
+
             if (res.payment_status !== 'pending') {
-              clearInterval(interval);
-              $("#paymentSection").hide();
+              clearInterval(interval); // Stop polling
+              $("#processingMessage").hide();
+
               if (res.payment_status === 'success') {
                 $("#resultSuccess").removeClass("d-none").show();
                 $("#successDetails").html("Payment ID: " + res.payment_reference);
-              } else {
+              } else if (res.payment_status === 'failed') {
                 $("#resultError").removeClass("d-none").show();
                 $("#errorDetails").html("Payment status: " + res.payment_status);
+              } else {
+                // Handle unexpected statuses
+                $("#resultError").removeClass("d-none").show();
+                $("#errorDetails").html("Unexpected payment status: " + res.payment_status);
               }
             }
           },
-          error: function(err) {
-            clearInterval(interval);
-            $("#paymentSection").addClass("d-none").hide();
+          error: function (err) {
+            clearInterval(interval); // Stop polling on error
+            $("#paymentSection").hide();
+            $("#processingMessage").hide();
             $("#resultError").removeClass("d-none").show();
-            $("#errorDetails").html("Error fetching payment status.");
-          }
+            $("#errorDetails").html("Error fetching payment status. Please try again.");
+          },
         });
-      }, 3000);  // Check every 3 seconds
+      }, 3000); // Poll every 3 seconds
     }
   </script>
 </body>
+
 </html>

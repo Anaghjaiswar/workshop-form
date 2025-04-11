@@ -50,11 +50,17 @@ RAZORPAY_SECRET = config('RAZORPAY_SECRET')
 RAZORPAY_WEBHOOK_SECRET = config('RAZORPAY_WEBHOOK_SECRET')
 
 
-# CORS_ALLOWED_ORIGINS = [
-#     "https://workshop-five-phi.vercel.app",
-# ]
-# settings.py
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = [
+    "https://workshop-five-phi.vercel.app",
+    "http://127.0.0.1:5500",
+    "https://anaghjaiswar.github.io",
+    "http://localhost:8000",
+    "https://render.csiakgec.co.in"
+]
+
+
+CORS_ALLOW_CREDENTIALS = True
+# CORS_ALLOW_ALL_ORIGINS = True
 
 
 ROOT_URLCONF = 'core.urls'
