@@ -192,6 +192,7 @@
       $(btn).addClass("btn-loading").attr("disabled", true)
         .append('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>');
     }
+    
 
     // Helper function to hide loader on a button
     function hideLoader(btn, originalText) {
@@ -222,6 +223,9 @@
       let originalBtnText = registerBtn.html();
       showLoader(registerBtn);
 
+      // Get the email value for checking
+      const email = $("#email").val().trim();
+
 
       let formData = {
         full_name: $("#fullName").val(),
@@ -237,24 +241,73 @@
       console.log("Form Data:", formData);
 
 
+      // Call the check-email-status API first
       $.ajax({
-        url: `${BASE_URL}/api/registrations/`,
+        url: `${BASE_URL}/api/check-email-status/`,
         method: "POST",
         contentType: "application/json",
-        data: JSON.stringify(formData),
-        success: function (data) {
-          console.log("Registration API response:", data);
-          registrationId = data.id;  // Save the returned registration ID
-          console.log(registrationId);
-          alert("Registration successful. Now proceeding to payment.");
-          $("#registrationForm").hide();
-          $("#otpSection").show(); // Show OTP section
-          $("#paymentSection").hide(); // Hide payment section until OTP is verified
-          // $("#paymentSection").show();
+        data: JSON.stringify({ email: email }),
+        success: function (checkResponse) {
+          console.log("Email status response:", checkResponse);
+          // If email does not exist in the database, continue with registration
+          if (!checkResponse.user_exists) {
+            // Prepare form data
+            let formData = {
+              full_name: $("#fullName").val(),
+              student_number: $("#studentNumber").val(),
+              branch: $("#branch").val(),
+              gender: $("#gender").val(),
+              year: $("#year").val(),
+              phone: $("#phone").val(),
+              email: email,
+              living_type: $("#livingType").val()
+            };
+            console.log("Form Data for new registration:", formData);
+
+            // Call registration API
+            $.ajax({
+              url: `${BASE_URL}/api/registrations/`,
+              method: "POST",
+              contentType: "application/json",
+              data: JSON.stringify(formData),
+              success: function (data) {
+                console.log("Registration API response:", data);
+                registrationId = data.id;
+                alert("Registration successful. Proceed to OTP verification.");
+                $("#registrationForm").hide();
+                $("#otpSection").show(); // Show OTP section
+              },
+              error: function (err) {
+                console.error("Registration API Error:", err);
+                alert("Registration failed. Please check your inputs and try again.");
+              }
+            });
+          } else {
+            // Email exists in the database – check further conditions:
+            // If not verified, redirect to OTP verification
+            if (checkResponse.redirect_to_otp_verification) {
+              alert(checkResponse.message);
+              registrationId = checkResponse.registration_id;
+              $("#registrationForm").hide();
+              $("#otpSection").show();
+            }
+            // If verified but payment pending or failed, redirect to payment page
+            else if (checkResponse.redirect_to_payment) {
+              alert(checkResponse.message);
+              registrationId = checkResponse.registration_id;
+              $("#registrationForm").hide();
+              $("#paymentSection").show();
+            }
+            // If already successfully registered
+            else {
+              alert(checkResponse.message);
+              // Optionally, you can show a message or redirect the user accordingly
+            }
+          }
         },
-        error: function (err) {
-          console.error("Registration API Error:", err);
-          alert("Registration failed. Please check your inputs and try again.");
+        error: function (error) {
+          console.error("Error checking email status:", error);
+          alert("Unable to check email status. Please try again.");
         },
         complete: function () {
           hideLoader(registerBtn, 'Register');
@@ -409,6 +462,7 @@
       }, 3000); // Poll every 3 seconds
     }
   </script>
+  
 </body>
 
 </html>

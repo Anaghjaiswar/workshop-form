@@ -5,7 +5,7 @@ import razorpay
 from rest_framework import status, generics
 from rest_framework.response import Response
 from .models import Registration
-from .serializers import  RegistrationSerializer, PaymentStatusSerializer
+from .serializers import  RegistrationSerializer, PaymentStatusSerializer, EmailStatusCheckSerializer
 import hmac
 import hashlib
 from django.conf import settings
@@ -174,15 +174,6 @@ class PaymentInitiationView(APIView):
         except Exception as e:
             return Response({'error': 'Failed to create Razorpay order.', 'details': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-import json
-import hmac
-import hashlib
-import logging
-from django.conf import settings
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-
-# Ensure logger configuration is set to capture DEBUG/INFO-level logs during testing.
 logger = logging.getLogger(__name__)
 
 @csrf_exempt
@@ -292,3 +283,61 @@ class PaymentStatusView(generics.RetrieveAPIView):
     queryset = Registration.objects.all()
     serializer_class = PaymentStatusSerializer
     lookup_field = 'id'
+
+
+class CheckEmailStatusView(APIView):
+    def post(self, request, *args, **kwargs):
+        serializer = EmailStatusCheckSerializer(data=request.data)
+        if serializer.is_valid():
+            email = serializer.validated_data['email']
+            try:
+                # Check if the email exists in the database
+                registration = Registration.objects.get(email=email)
+
+                # If email is not verified, send OTP and ask for verification
+                if not registration.is_email_verified:
+                    # Generate OTP
+                    otp = str(random.randint(100000, 999999))
+                    registration.email_otp = otp
+                    registration.otp_expires_at = now() + timedelta(minutes=10)
+                    registration.save()
+
+                    # Send OTP to email
+                    send_mail(
+                        subject="OTP Verification",
+                        message=f"Your OTP is: {otp}",
+                        from_email="noreply@akgec.ac.in",
+                        recipient_list=[email],
+                    )
+
+                    return Response({
+                        "user_exists": True,
+                        "message": "Email is registered but not verified. OTP has been sent.",
+                        "redirect_to_otp_verification": True,
+                        "registration_id": registration.id,
+                        "email": email
+                    }, status=status.HTTP_200_OK)
+
+                # If email is verified, check payment status
+                if registration.payment_status in ['pending', 'failed']:
+                    return Response({
+                        "user_exists": True,
+                        "message": f"Payment status is {registration.payment_status}. Redirecting to payment page.",
+                        "redirect_to_payment": True,
+                        "registration_id": registration.id
+                    }, status=status.HTTP_200_OK)
+
+                # If payment is successful
+                return Response({
+                    "user_exists": True,
+                    "message": "You have already successfully registered for the workshop.",
+                    "redirect_to_payment": False,
+                }, status=status.HTTP_200_OK)
+
+            except Registration.DoesNotExist:
+                # Email does not exist, continue normal flow
+                return Response({
+                    "user_exists": False,
+                    "message": "Email does not exist. Continue with registration.",
+                }, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

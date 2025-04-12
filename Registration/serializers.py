@@ -18,11 +18,11 @@ class RegistrationSerializer(serializers.ModelSerializer):
             'living_type',
             # Email verification fields if needed:
             'is_email_verified',
-            'email_otp',
-            'otp_expires_at',
+            # 'email_otp',
+            # 'otp_expires_at',
             # Payment fields:
-            'payment_status',
-            'payment_reference',
+            # 'payment_status',
+            # 'payment_reference',
             'created_at',
             'updated_at',
         ]
@@ -33,3 +33,11 @@ class PaymentStatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = Registration
         fields = ['id', 'full_name', 'email', 'payment_status', 'payment_reference']
+
+class EmailStatusCheckSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+    def validate_email(self, value):
+        if not value.endswith('@akgec.ac.in'):
+            raise serializers.ValidationError("Email must end with '@akgec.ac.in'.")
+        return value
