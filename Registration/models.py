@@ -50,8 +50,24 @@ class Registration(models.Model):
     ]
 
     # PERSONAL DETAILS
-    full_name = models.CharField(max_length=100)
-    student_number = models.CharField(max_length=10)
+    full_name = models.CharField(
+        max_length=100,
+        validators=[
+            RegexValidator(
+                regex=r'^[A-Za-z\s]+$',
+                message="Full name must contain only letters and spaces."
+            )
+        ]
+    )
+    student_number = models.CharField(
+        max_length=10,
+        validators=[
+            RegexValidator(
+                regex=r'^\d+$',
+                message="Student number must be numeric."
+            )
+        ]
+    )
     branch = models.CharField(max_length=10, choices=BRANCH_CHOICES)
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES)
     year = models.CharField(max_length=10, choices=YEAR_CHOICES)

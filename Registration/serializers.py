@@ -2,8 +2,40 @@
 
 from rest_framework import serializers
 from .models import Registration
+from django.core.validators import RegexValidator
+from .models import validate_akgec_email
 
 class RegistrationSerializer(serializers.ModelSerializer):
+
+    full_name = serializers.CharField(
+        max_length=100,
+        validators=[
+            RegexValidator(
+                regex=r'^[A-Za-z\s]+$',
+                message="Full name must contain only letters and spaces."
+            )
+        ]
+    )
+    student_number = serializers.CharField(
+        max_length=10,
+        validators=[
+            RegexValidator(
+                regex=r'^\d+$',
+                message="Student number must be numeric."
+            )
+        ]
+    )
+    phone = serializers.CharField(
+        max_length=12,
+        validators=[
+            RegexValidator(
+                regex=r'^\d{10,12}$',
+                message="Phone number must be 10-12 digits."
+            )
+        ]
+    )
+
+    email = serializers.EmailField(validators=[validate_akgec_email])
     class Meta:
         model = Registration
         fields = [
