@@ -12,14 +12,20 @@ from django.conf import settings
 import json
 from rest_framework.views import APIView
 import logging
+from rest_framework.exceptions import APIException, ValidationError
 from django.utils.timezone import now, timedelta
 from django.core.mail import send_mail
+from django.db import transaction, IntegrityError
+from rest_framework.throttling import AnonRateThrottle
+from .custom_throttles import RegistrationCreateThrottle
+
 
 logger = logging.getLogger(__name__)
 
 class RegistrationCreateView(generics.CreateAPIView):
     queryset = Registration.objects.all()
     serializer_class = RegistrationSerializer
+    throttle_classes = [RegistrationCreateThrottle]
 
     def generate_otp(self):
         """Generate a random 6-digit OTP."""
@@ -30,28 +36,44 @@ class RegistrationCreateView(generics.CreateAPIView):
         return hashlib.sha256(str(otp).encode()).hexdigest()
 
     def perform_create(self, serializer):
-        instance = serializer.save()
+        try:
+            # Wrap the creation process in a transaction so that we can roll back on error
+            with transaction.atomic():
+                # Save the instance from serializer
+                instance = serializer.save()
 
-        otp = self.generate_otp()
-        otp_expiry = now() + timedelta(minutes=10)
+                # Generate OTP and set expiration
+                otp = self.generate_otp()
+                otp_expiry = now() + timedelta(minutes=10)
 
-        # Update the instance with OTP and expiration time
-        instance.email_otp = str(otp)
-        instance.otp_expires_at = otp_expiry
-        instance.save()
+                # Update the instance with OTP and expiration time
+                instance.email_otp = str(otp)
+                instance.otp_expires_at = otp_expiry
+                instance.save()
 
-        # Send OTP via email
-        message = f"Dear {instance.full_name},\n\nYour OTP for email verification is: {otp}\n\nThis OTP is valid until {otp_expiry.strftime('%Y-%m-%d %H:%M:%S')}."
-        send_mail(
-            'Email Verification OTP',
-            message,
-            'your-email@example.com',  # Replace with your sender email
-            [instance.email],
-            fail_silently=False,
-        )
+                # Prepare email message
+                message = (
+                    f"Dear {instance.full_name},\n\n"
+                    f"Your OTP for email verification is: {otp}\n\n"
+                    f"This OTP is valid until {otp_expiry.strftime('%Y-%m-%d %H:%M:%S')}."
+                )
 
+                # Attempt to send OTP via email
+                send_mail(
+                    'Email Verification OTP',
+                    message,
+                    'your-email@example.com',  # Replace with your sender email
+                    [instance.email],
+                    fail_silently=False,
+                )
 
-        serializer.save()
+        except IntegrityError as ie:
+            # If it's a duplicate email, raise a ValidationError (which returns a 400 status code)
+            raise ValidationError({"error": "Registration with this email already exists. Please use a different email or login."})
+
+        except Exception as e:
+            # Log the error as needed and raise an API exception
+            raise APIException("Registration failed due to an error: " + str(e))
 
 class VerifyEmailView(generics.UpdateAPIView):
     queryset = Registration.objects.all()
@@ -78,10 +100,16 @@ class VerifyEmailView(generics.UpdateAPIView):
         else:
             return Response({'error': 'Invalid OTP.'}, status=status.HTTP_400_BAD_REQUEST)
 
+class ResendOTPThrottle(AnonRateThrottle):
+    rate = '3/min'
+
+
 class ResendOTPView(APIView):
     """
     API endpoint to resend the OTP to a user's email.
     """
+    throttle_classes = [ResendOTPThrottle]
+    
     def generate_otp(self):
         """Generate a random 6-digit OTP."""
         return random.randint(100000, 999999)
@@ -145,7 +173,7 @@ class PaymentInitiationView(APIView):
 
         # Create an order
         order_data = {
-            "amount": 50000, 
+            "amount": 10000, 
             "currency": "INR",
             "receipt": f"receipt_{reg_id}",
             "payment_capture": 1 
@@ -197,7 +225,7 @@ def razorpay_webhook(request):
         return JsonResponse({'error': 'Signature missing.'}, status=400)
 
     key_secret = settings.RAZORPAY_WEBHOOK_SECRET
-    print("Key secret used:", key_secret)
+    # print("Key secret used:", key_secret)
     generated_signature = hmac.new(
         key_secret.encode('utf-8'), 
         payload, 
@@ -285,7 +313,11 @@ class PaymentStatusView(generics.RetrieveAPIView):
     lookup_field = 'id'
 
 
+class CheckEmailStatusThrottle(AnonRateThrottle):
+    rate = '10/min'
+
 class CheckEmailStatusView(APIView):
+    throttle_classes = [CheckEmailStatusThrottle]
     def post(self, request, *args, **kwargs):
         serializer = EmailStatusCheckSerializer(data=request.data)
         if serializer.is_valid():
