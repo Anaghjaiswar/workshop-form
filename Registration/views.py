@@ -272,19 +272,33 @@ def razorpay_webhook(request):
         registration.payment_reference = payment_id
         registration.save()
         subject = "Workshop Registration - Payment Successful"
-        message = (
+        plain_message = (
             f"Dear {registration.full_name},\n\n"
-            f"We are pleased to inform you that your payment of ₹{payment_entity.get('amount', 'N/A')/100:.2f} "
-            f"for the workshop has been successfully received.\n"
-            f"Your Payment ID is: {payment_id}\n\n"
-            f"Thank you for registering. We look forward to your participation!\n\n"
-            f"Best regards,\nWorkshop Team"
+            "Your payment was successful. Thank you for registering!"
         )
+        html_message = f"""
+        <html>
+        <body>
+            <div style="font-family: Arial, sans-serif;">
+            <h2 style="color: #2A7AE2;">Workshop Registration - Payment Successful</h2>
+            <p>Dear {registration.full_name},</p>
+            <p>Your payment of <strong>₹{payment_entity.get('amount', 'N/A')/100:.2f}</strong> for the workshop has been successfully received.</p>
+            <p>Your Payment ID is: <strong>{payment_id}</strong></p>
+            <p>We are excited to have you join us!</p>
+            <p><img src="https://res.cloudinary.com/dcbla9zbl/image/upload/v1744550174/tnwwrwlomvtgljiobpxg.jpg" alt="Your Logo" style="width:150px;"></p>
+            <p>Thank you for registering.</p>
+            <p>Best regards,<br>Workshop Team</p>
+            </div>
+        </body>
+        </html>
+        """
+
         send_mail(
             subject,
-            message,
-            'jaiswaranagh@gmail.com',  
+            plain_message,
+            'jaiswarnagh@gmail.com',  # Replace with your sender email
             [registration.email],
+            html_message=html_message,
             fail_silently=False,
         )
         print(f"Registration updated: {registration}")
@@ -319,7 +333,7 @@ def razorpay_webhook(request):
             f"for the workshop has failed.\n"
             f"Your Payment ID is: {payment_id}\n\n"
             f"Please retry the payment or contact support if you need assistance.\n\n"
-            f"Best regards,\nWorkshop Team"
+            f"Best regards,\nCSI Team"
         )
         send_mail(
             subject,
