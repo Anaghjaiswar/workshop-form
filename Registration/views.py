@@ -271,6 +271,22 @@ def razorpay_webhook(request):
         registration.payment_status = 'success'
         registration.payment_reference = payment_id
         registration.save()
+        subject = "Workshop Registration - Payment Successful"
+        message = (
+            f"Dear {registration.full_name},\n\n"
+            f"We are pleased to inform you that your payment of ₹{payment_entity.get('amount', 'N/A')/100:.2f} "
+            f"for the workshop has been successfully received.\n"
+            f"Your Payment ID is: {payment_id}\n\n"
+            f"Thank you for registering. We look forward to your participation!\n\n"
+            f"Best regards,\nWorkshop Team"
+        )
+        send_mail(
+            subject,
+            message,
+            'jaiswaranagh@gmail.com',  
+            [registration.email],
+            fail_silently=False,
+        )
         print(f"Registration updated: {registration}")
         logger.info(f"Payment captured and registration updated for order_id: {order_id}")
         return JsonResponse({'message': 'Payment captured and registration updated.'}, status=200)
@@ -296,6 +312,22 @@ def razorpay_webhook(request):
         registration.payment_status = 'failed'
         registration.payment_reference = payment_id
         registration.save()
+        subject = "Workshop Registration - Payment Failed"
+        message = (
+            f"Dear {registration.full_name},\n\n"
+            f"Unfortunately, your payment of ₹{payment_entity.get('amount', 'N/A')/100:.2f} "
+            f"for the workshop has failed.\n"
+            f"Your Payment ID is: {payment_id}\n\n"
+            f"Please retry the payment or contact support if you need assistance.\n\n"
+            f"Best regards,\nWorkshop Team"
+        )
+        send_mail(
+            subject,
+            message,
+            'jaiswaranagh@gmail.com',
+            [registration.email],
+            fail_silently=False,
+        )
         print(f"Registration updated (failed): {registration}")
         logger.info(f"Payment failed and registration updated for order_id: {order_id}")
         return JsonResponse({'message': 'Payment failed and registration updated.'}, status=200)
