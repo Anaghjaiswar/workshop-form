@@ -9,6 +9,38 @@ load_dotenv()
 
 SECRET_KEY = config('SECRET_KEY')
 DEBUG = config('DEBUG', cast = bool)
+
+# security settings
+SECURE_SSL_REDIRECT = True
+SECURE_HSTS_SECONDS = 31536000
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SESSION_COOKIE_SECURE = True
+
+# Ensure the CSRF cookie is only sent over HTTPS.
+CSRF_COOKIE_SECURE = True
+
+# Mitigate client-side script access to the session cookie.
+SESSION_COOKIE_HTTPONLY = True
+
+# Protect against clickjacking attacks by not allowing your site to be displayed in an iframe.
+X_FRAME_OPTIONS = 'DENY'
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+}
+
+
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='').split(',')
 
 
@@ -58,17 +90,30 @@ RAZORPAY_SECRET = config('RAZORPAY_SECRET')
 RAZORPAY_WEBHOOK_SECRET = config('RAZORPAY_WEBHOOK_SECRET')
 
 
-# CORS_ALLOWED_ORIGINS = [
-#     "https://workshop-five-phi.vercel.app",
-#     "http://127.0.0.1:5500",
-#     "https://anaghjaiswar.github.io",
-#     "http://localhost:8000",
-#     "https://render.csiakgec.co.in"
-# ]
+CORS_ALLOWED_ORIGINS = [
+    "https://render.csiakgec.co.in",  
+]
 
-
+# Allow cookies and credentials to be sent along with requests
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_ALL_ORIGINS = True
+
+# Restrict HTTP methods if needed (optional, but adds more security)
+CORS_ALLOW_METHODS = [
+    "GET",
+    "POST",
+    "PUT",
+    "DELETE",
+    "OPTIONS",
+]
+
+# Restrict headers if needed (optional, but adds more security)
+CORS_ALLOW_HEADERS = [
+    "Authorization",
+    "Content-Type",
+    "X-CSRFToken",
+    "X-Requested-With",
+]
+
 
 
 ROOT_URLCONF = 'core.urls'
