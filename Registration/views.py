@@ -15,6 +15,7 @@ import logging
 from rest_framework.exceptions import APIException, ValidationError
 from django.utils.timezone import now, timedelta
 from django.core.mail import send_mail
+from django.utils import timezone
 from django.db import transaction, IntegrityError
 from rest_framework.throttling import AnonRateThrottle
 from .custom_throttles import RegistrationCreateThrottle
@@ -44,7 +45,7 @@ class RegistrationCreateView(generics.CreateAPIView):
 
                 # Generate OTP and set expiration
                 otp = self.generate_otp()
-                otp_expiry = now() + timedelta(minutes=10)
+                otp_expiry = timezone.localtime(now() + timedelta(minutes=10))
 
                 # Update the instance with OTP and expiration time
                 instance.email_otp = str(otp)
@@ -52,18 +53,48 @@ class RegistrationCreateView(generics.CreateAPIView):
                 instance.save()
 
                 # Prepare email message
-                message = (
+                plain_message = (
                     f"Dear {instance.full_name},\n\n"
                     f"Your OTP for email verification is: {otp}\n\n"
-                    f"This OTP is valid until {otp_expiry.strftime('%Y-%m-%d %H:%M:%S')}."
+                    f"This OTP is valid until {otp_expiry.strftime('%Y-%m-%d %H:%M:%S')}.\n\n"
+                    "If you did not request this verification, please ignore this email.\n\n"
+                    "Sincerely,\nCSI Team"
                 )
 
-                # Attempt to send OTP via email
+                # HTML message with inline CSS and CSI logo image
+                html_message = f"""
+                <html>
+                  <body style="margin:0; padding:0; font-family: Arial, sans-serif;">
+                    <table align="center" width="600" style="border:1px solid #dddddd; border-radius:4px; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+                      <tr>
+                        <td style="padding:20px; text-align:center; background-color:#f7f7f7;">
+                          <img src="https://res.cloudinary.com/dcbla9zbl/image/upload/v1744550174/tnwwrwlomvtgljiobpxg.jpg" alt="CSI Logo" style="width:100px;">
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding:20px;">
+                          <h2 style="color:#2A7AE2; margin-top:0;">Workshop Verification Code</h2>
+                          <p>Dear {instance.full_name},</p>
+                          <p>We received a request to verify your email address: <strong>{instance.email}</strong> as part of your workshop registration.</p>
+                          <p>Your verification code is:</p>
+                          <div style="font-size:24px; font-weight:bold; color:#333; margin: 10px 0;">{otp}</div>
+                          <p>This OTP is valid until <strong>{otp_expiry.strftime('%Y-%m-%d %H:%M:%S')}</strong>.</p>
+                          <p>If you did not request this verification, please ignore this email.</p>
+                          <p>Sincerely,<br>CSI Team</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </body>
+                </html>
+                """
+
+                # Send the email with both plain and HTML content
                 send_mail(
                     'Email Verification OTP',
-                    message,
-                    'your-email@example.com',  # Replace with your sender email
+                    plain_message,
+                    'jaiswaranagh@gmail.com',  # Replace with your sender email
                     [instance.email],
+                    html_message=html_message,
                     fail_silently=False,
                 )
 
@@ -126,22 +157,51 @@ class ResendOTPView(APIView):
 
         # Generate a new OTP and update the instance with expiry time (e.g., 10 minutes from now)
         otp = self.generate_otp()
-        otp_expiry = now() + timedelta(minutes=10)
+        otp_expiry = timezone.localtime(now() + timedelta(minutes=10))
         registration.email_otp = str(otp)
         registration.otp_expires_at = otp_expiry
         registration.save()
 
-        # Prepare the email message and send it
-        message = (
+        plain_message = (
             f"Dear {registration.full_name},\n\n"
-            f"Your new OTP for email verification is: {otp}\n\n"
-            f"This OTP is valid until {otp_expiry.strftime('%Y-%m-%d %H:%M:%S')}."
+            f"Your OTP for email verification is: {otp}\n\n"
+            f"This OTP is valid until {otp_expiry.strftime('%Y-%m-%d %H:%M:%S')}.\n\n"
+            "If you did not request this verification, please ignore this email.\n\n"
+            "Sincerely,\nCSI Team"
         )
+
+        html_message = f"""
+        <html>
+          <body style="margin:0; padding:0; font-family: Arial, sans-serif;">
+            <table align="center" width="600" style="border:1px solid #dddddd; border-radius:4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+              <tr>
+                <td style="padding:20px; text-align:center; background-color:#f7f7f7;">
+                  <img src="https://res.cloudinary.com/dcbla9zbl/image/upload/v1744550174/tnwwrwlomvtgljiobpxg.jpg" alt="CSI Logo" style="width:100px;">
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:20px;">
+                  <h2 style="color:#2A7AE2;">Resend OTP - Verification Code</h2>
+                  <p>Dear {registration.full_name},</p>
+                  <p>Your new OTP for email verification is:</p>
+                  <div style="font-size:24px; font-weight:bold; color:#333; margin: 10px 0;">{otp}</div>
+                  <p>This OTP is valid until <strong>{otp_expiry.strftime('%Y-%m-%d %H:%M:%S')} IST</strong>.</p>
+                  <p>If you did not request this, please ignore this email.</p>
+                  <p>Sincerely,<br>CSI Team</p>
+                </td>
+              </tr>
+            </table>
+          </body>
+        </html>
+        """
+
+        # Send the email with both plain and HTML content
         send_mail(
-            'Resend Email Verification OTP',
-            message,
-            'your-email@example.com',  # Replace with your sender email
+            'Email Verification OTP',
+            plain_message,
+            'jaiswaranagh@gmail.com',  # Replace with your sender email
             [registration.email],
+            html_message=html_message,
             fail_silently=False,
         )
 
@@ -327,19 +387,44 @@ def razorpay_webhook(request):
         registration.payment_reference = payment_id
         registration.save()
         subject = "Workshop Registration - Payment Failed"
-        message = (
+        payment_amount = payment_entity.get("amount", 0)
+        plain_message = (
             f"Dear {registration.full_name},\n\n"
-            f"Unfortunately, your payment of ₹{payment_entity.get('amount', 'N/A')/100:.2f} "
-            f"for the workshop has failed.\n"
-            f"Your Payment ID is: {payment_id}\n\n"
-            f"Please retry the payment or contact support if you need assistance.\n\n"
-            f"Best regards,\nCSI Team"
+            f"Unfortunately, your payment of ₹{payment_amount/100:.2f} for the workshop has failed.\n"
+            f"Payment ID: {payment_id}\n\n"
+            "Please retry the payment or contact support if you need assistance.\n\n"
+            "Best regards,\nWorkshop Team"
         )
+        html_message = f"""
+        <html>
+            <body style="font-family: Arial, sans-serif; margin:0; padding:0;">
+            <table align="center" width="600" style="border:1px solid #dddddd; border-radius:4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <tr>
+                <td style="padding:20px; text-align:center; background-color:#f7f7f7;">
+                    <img src="https://res.cloudinary.com/dcbla9zbl/image/upload/v1744550174/tnwwrwlomvtgljiobpxg.jpg" alt="CSI Logo" style="width:100px;">
+                </td>
+                </tr>
+                <tr>
+                <td style="padding:20px;">
+                    <h2 style="color:#D9534F; margin-top:0;">Payment Failed</h2>
+                    <p>Dear {registration.full_name},</p>
+                    <p>Unfortunately, your payment of <strong>₹{payment_amount/100:.2f}</strong> for the workshop has failed.</p>
+                    <p>Your Payment ID is: <strong>{payment_id}</strong></p>
+                    <p>Please retry your payment or contact our support if you need assistance.</p>
+                    <p>Best regards,<br>Workshop Team</p>
+                </td>
+                </tr>
+            </table>
+            </body>
+        </html>
+        """
+
         send_mail(
             subject,
-            message,
-            'jaiswaranagh@gmail.com',
+            plain_message,
+            'jaiswarnagh@gmail.com', 
             [registration.email],
+            html_message=html_message,
             fail_silently=False,
         )
         print(f"Registration updated (failed): {registration}")
@@ -377,15 +462,52 @@ class CheckEmailStatusView(APIView):
                     # Generate OTP
                     otp = str(random.randint(100000, 999999))
                     registration.email_otp = otp
-                    registration.otp_expires_at = now() + timedelta(minutes=10)
+                    otp_expiry = registration.otp_expires_at = timezone.localtime(now() + timedelta(minutes=10))
                     registration.save()
 
                     # Send OTP to email
+                    plain_message = (
+                        f"Dear {registration.full_name},\n\n"
+                        f"Your OTP for email verification is: {otp}\n"
+                        f"This OTP is valid until {otp_expiry.strftime('%Y-%m-%d %H:%M:%S')} IST.\n\n"
+                        "If you did not request this verification, please ignore this email.\n\n"
+                        "Sincerely,\nWorkshop Team"
+                    )
+
+
+                    html_message = f"""
+                    <html>
+                      <body style="margin:0; padding:0; font-family: Arial, sans-serif;">
+                        <table align="center" width="600" style="border:1px solid #dddddd; border-radius:4px; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+                          <tr>
+                            <td style="padding:20px; text-align:center; background-color:#f7f7f7;">
+                              <img src="https://res.cloudinary.com/dcbla9zbl/image/upload/v1744550174/tnwwrwlomvtgljiobpxg.jpg" alt="CSI Logo" style="width:100px;">
+                            </td>
+                          </tr>
+                          <tr>
+                            <td style="padding:20px;">
+                              <h2 style="color:#2A7AE2; margin-top:0;">Workshop OTP Verification</h2>
+                              <p>Dear {registration.full_name},</p>
+                              <p>We received a request to verify your email address: <strong>{registration.email}</strong> as part of your workshop registration.</p>
+                              <p>Your OTP is:</p>
+                              <div style="font-size:24px; font-weight:bold; color:#333; margin: 10px 0;">{otp}</div>
+                              <p>This OTP is valid until <strong>{otp_expiry.strftime('%Y-%m-%d %H:%M:%S')} IST</strong>.</p>
+                              <p>If you did not request this, please ignore this email.</p>
+                              <p>Sincerely,<br>Workshop Team</p>
+                            </td>
+                          </tr>
+                        </table>
+                      </body>
+                    </html>
+                    """
+
                     send_mail(
                         subject="OTP Verification",
-                        message=f"Your OTP is: {otp}",
-                        from_email="noreply@akgec.ac.in",
+                        message=plain_message,
+                        from_email="jaiswaranagh@gmail.com", 
                         recipient_list=[email],
+                        html_message=html_message,
+                        fail_silently=False,
                     )
 
                     return Response({
