@@ -18,10 +18,10 @@ DEBUG = config('DEBUG', cast = bool)
 # SESSION_COOKIE_SECURE = True
 
 # Ensure the CSRF cookie is only sent over HTTPS.
-CSRF_COOKIE_SECURE = True
+# CSRF_COOKIE_SECURE = True
 
 # Mitigate client-side script access to the session cookie.
-SESSION_COOKIE_HTTPONLY = True
+# SESSION_COOKIE_HTTPONLY = True
 
 # Protect against clickjacking attacks by not allowing your site to be displayed in an iframe.
 X_FRAME_OPTIONS = 'DENY'
