@@ -55,18 +55,22 @@ class RegistrationCreateView(generics.CreateAPIView):
         return hashlib.sha256(str(otp).encode()).hexdigest()
 
     def perform_create(self, serializer):
+        logger.info("Starting registration process.")
         recaptcha_token = self.request.data.get("gRecaptchaToken")
         if not recaptcha_token:
+            logger.error("reCAPTCHA token is missing.")
             raise ValidationError({"recaptcha": "reCAPTCHA token is missing."})
         
         # Verify the token using your separately defined function.
         # Make sure the action ("register") matches what you're using on the front end.
         if not verify_recaptcha(recaptcha_token, "register"):
+            logger.warning("reCAPTCHA verification failed.")
             raise ValidationError({"recaptcha": "reCAPTCHA verification failed."})
         try:
             # Wrap the creation process in a transaction so that we can roll back on error
             with transaction.atomic():
                 # Save the instance from serializer
+                logger.info("Saving registration instance.")
                 instance = serializer.save()
 
                 # Generate OTP and set expiration
@@ -130,12 +134,15 @@ class RegistrationCreateView(generics.CreateAPIView):
                     html_message=html_message,
                     fail_silently=False,
                 )
+                logger.info(f"Verification email sent to {instance.email}.")
 
         except IntegrityError as ie:
+            logger.error(f"Integrity error: {str(ie)}")
             # If it's a duplicate email, raise a ValidationError (which returns a 400 status code)
             raise ValidationError({"error": "Registration with this email already exists. Please use a different email or login."})
 
         except Exception as e:
+            logger.exception("An unexpected error occurred during registration.")
             # Log the error as needed and raise an API exception
             raise APIException("Registration failed due to an error: " + str(e))
 
