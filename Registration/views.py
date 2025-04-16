@@ -5,7 +5,7 @@ import razorpay
 from rest_framework import status, generics
 from rest_framework.response import Response
 
-from core.utils.rsa_utils import rsa_decrypt
+from utils.rsa_utils import rsa_decrypt
 from .models import Registration
 from .serializers import  RegistrationSerializer, PaymentStatusSerializer, EmailStatusCheckSerializer
 import hmac
