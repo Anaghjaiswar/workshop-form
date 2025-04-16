@@ -236,7 +236,7 @@ class PaymentInitiationView(APIView):
 
         # Create an order
         order_data = {
-            "amount": 100, 
+            "amount": 10000, 
             "currency": "INR",
             "receipt": f"receipt_{reg_id}",
             "payment_capture": 1 
