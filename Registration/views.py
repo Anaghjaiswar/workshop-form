@@ -416,7 +416,7 @@ def razorpay_webhook(request):
         send_mail(
             subject,
             plain_message,
-            'jaiswarnagh@gmail.com',  # Replace with your sender email
+            'csichapters@gmail.com',  # Replace with your sender email
             [registration.email],
             html_message=html_message,
             fail_silently=False,
@@ -490,7 +490,7 @@ def razorpay_webhook(request):
         send_mail(
             subject,
             plain_message,
-            'jaiswarnagh@gmail.com', 
+            'csichapters@gmail.com', 
             [registration.email],
             html_message=html_message,
             fail_silently=False,
@@ -579,7 +579,7 @@ class CheckEmailStatusView(APIView):
                     send_mail(
                         subject="OTP Verification",
                         message=plain_message,
-                        from_email="jaiswaranagh@gmail.com", 
+                        from_email="csichapters@gmail.com", 
                         recipient_list=[email],
                         html_message=html_message,
                         fail_silently=False,
