@@ -89,35 +89,37 @@ class RegistrationCreateView(generics.CreateAPIView):
 
                 # HTML message with inline CSS and CSI logo image
                 html_message = f"""
-                <html>
-                <body style="margin:0; padding:0; font-family: Arial, sans-serif;">
-                    <table align="center" width="600" style="border:1px solid #dddddd; border-radius:4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); background-color:#ffffff;">
-                    <tr>
-                        <td style="padding:20px; text-align:center; background-color:#ffffff; border-bottom: 2px solid #eeeeee;">
-                        <img src="https://res.cloudinary.com/doctqxch9/image/upload/v1744829056/logocsiCenter_Background_Removed_qu85rk.png" alt="CSI Logo" style="width:100px; height:auto;">
-                        </td>
-                    </tr>
-                    <tr>
-                        <td style="padding:20px;">
-                        <h2 style="color:#333333; text-align:center;">Render 3.0 Verification Code</h2>
-                        <p>Dear <span style="font-weight:bold; color:#0078d4;">{instance.full_name}</span>,</p>
-                        <p>We received a request to verify your email address as part of your registration.</p>
-                        <div style="margin:20px 0; text-align:center; font-size:24px; font-weight:bold; color:#333333; border:2px dashed #555555; padding:15px; border-radius:8px; background-color:#f9f9f9;">
-                            {otp}
-                        </div>
-                        <p>This OTP is valid until <span style="font-weight:bold; color:#0078d4;">{otp_expiry.strftime('%Y-%m-%d %H:%M:%S')} IST</span>.</p>
-                        <p>If you did not request this verification, please ignore this email.</p>
-                        <p>Best regards,<br><strong>CSI Team</strong></p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td style="padding:10px; text-align:center; background-color:#f4f4f4; font-size:14px; color:#555555;">
-                        © 2025 CSI. All rights reserved.
-                        </td>
-                    </tr>
-                    </table>
-                </body>
-                </html>
+<html>
+  <body style="margin:0; padding:0; font-family: Arial, sans-serif;">
+    <table align="center" width="600" style="border:1px solid #dddddd; border-radius:4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); background-color:#ffffff;">
+      <tr>
+        <td style="padding:20px; text-align:center; background-color:#ffffff; border-bottom: 2px solid #eeeeee;">
+          <img src="https://res.cloudinary.com/doctqxch9/image/upload/v1744829056/logocsiCenter_Background_Removed_qu85rk.png" alt="CSI Logo" style="width:100px; height:auto;">
+          <h1 style="margin-top:10px; font-size:24px; font-weight:bold; color:#0078d4;">COMPUTER SOCIETY OF INDIA</h1>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:20px;">
+          <h2 style="color:#333333; text-align:center;">Render 3.0 Verification Code</h2>
+          <p>Dear <span style="font-weight:bold; color:#0078d4;">{instance.full_name}</span>,</p>
+          <p>We received a request to verify your email address as part of your registration.</p>
+          <div style="margin:20px 0; text-align:center; font-size:24px; font-weight:bold; color:#333333; border:2px dashed #555555; padding:15px; border-radius:8px; background-color:#f9f9f9;">
+            {otp}
+          </div>
+          <p>This OTP is valid until <span style="font-weight:bold; color:#0078d4;">{otp_expiry.strftime('%Y-%m-%d %H:%M:%S')} IST</span>.</p>
+          <p>If you did not request this verification, please ignore this email.</p>
+          <p>Best regards,<br><strong>CSI Team</strong></p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:10px; text-align:center; background-color:#f4f4f4; font-size:14px; color:#555555;">
+          © 2025 CSI. All rights reserved.
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+
                 """
                 # Send the email with both plain and HTML content
                 send_mail(
@@ -208,6 +210,7 @@ class ResendOTPView(APIView):
       <tr>
         <td style="padding:20px; text-align:center; background-color:#ffffff; border-bottom: 2px solid #eeeeee;">
           <img src="https://res.cloudinary.com/doctqxch9/image/upload/v1744829056/logocsiCenter_Background_Removed_qu85rk.png" alt="CSI Logo" style="width:100px; height:auto;">
+          <h1 style="margin-top:10px; font-size:24px; font-weight:bold; color:#0078d4;">COMPUTER SOCIETY OF INDIA</h1>
         </td>
       </tr>
       <tr>
@@ -384,22 +387,23 @@ def razorpay_webhook(request):
       <tr>
         <td style="padding:20px; text-align:center; background-color:#ffffff; border-bottom:2px solid #eeeeee;">
           <img src="https://res.cloudinary.com/doctqxch9/image/upload/v1744829056/logocsiCenter_Background_Removed_qu85rk.png" alt="CSI Logo" style="width:100px; height:auto;">
+        <h1 style="margin-top:10px; font-size:24px; font-weight:bold; color:#0078d4;">COMPUTER SOCIETY OF INDIA</h1>
         </td>
       </tr>
       <tr>
         <td style="padding:20px;">
-          <h2 style="color:#2A7AE2; text-align:center;">Workshop Registration - Payment Successful</h2>
+          <h2 style="color:#2A7AE2; text-align:center;">Render 3.0 - Payment Successful</h2>
           <p>Dear <span style="font-weight:bold; color:#0078d4;">{registration.full_name}</span>,</p>
-          <p>Your payment of <strong style="color:#28a745;">₹{payment_entity.get('amount', 'N/A') / 100:.2f}</strong> for the workshop has been successfully received.</p>
+          <p>Your payment of <strong style="color:#28a745;">₹{payment_entity.get('amount', 'N/A') / 100:.2f}</strong> for the Render 3.0 has been successfully received.</p>
           <p>Your Payment ID is: <span style="font-weight:bold; color:#0078d4;">{payment_id}</span></p>
           <p>We are excited to have you join us and look forward to a great workshop!</p>
           <p>Thank you for registering.</p>
-          <p>Best regards,<br><strong>Workshop Team</strong></p>
+          <p>Best regards,<br><strong>CSI Team</strong></p>
         </td>
       </tr>
       <tr>
         <td style="padding:10px; text-align:center; background-color:#f4f4f4; font-size:14px; color:#555555;">
-          © 2025 Workshop Team. All rights reserved.
+          © 2025 CSI. All rights reserved.
         </td>
       </tr>
     </table>
@@ -458,22 +462,23 @@ def razorpay_webhook(request):
       <tr>
         <td style="padding:20px; text-align:center; background-color:#ffffff; border-bottom:2px solid #eeeeee;">
           <img src="https://res.cloudinary.com/doctqxch9/image/upload/v1744829056/logocsiCenter_Background_Removed_qu85rk.png" alt="CSI Logo" style="width:100px; height:auto;">
+        <h1 style="margin-top:10px; font-size:24px; font-weight:bold; color:#0078d4;">COMPUTER SOCIETY OF INDIA</h1>
         </td>
       </tr>
       <tr>
         <td style="padding:20px;">
           <h2 style="color:#D9534F; text-align:center;">Payment Failed</h2>
           <p>Dear <span style="font-weight:bold; color:#0078d4;">{registration.full_name}</span>,</p>
-          <p>Unfortunately, your payment of <strong style="color:#d9534f;">₹{payment_amount / 100:.2f}</strong> for the workshop has failed.</p>
+          <p>Unfortunately, your payment of <strong style="color:#d9534f;">₹{payment_amount / 100:.2f}</strong> for the Render 3.0 has failed.</p>
           <p>Your Payment ID is: <span style="font-weight:bold; color:#0078d4;">{payment_id}</span></p>
           <p>Please retry your payment or contact our support if you need assistance.</p>
           <p>Thank you for your patience.</p>
-          <p>Best regards,<br><strong>Workshop Team</strong></p>
+          <p>Best regards,<br><strong>CSI Team</strong></p>
         </td>
       </tr>
       <tr>
         <td style="padding:10px; text-align:center; background-color:#f4f4f4; font-size:14px; color:#555555;">
-          © 2025 Workshop Team. All rights reserved.
+          © 2025 CSI. All rights reserved.
         </td>
       </tr>
     </table>
@@ -545,6 +550,7 @@ class CheckEmailStatusView(APIView):
       <tr>
         <td style="padding:20px; text-align:center; background-color:#ffffff; border-bottom: 2px solid #eeeeee;">
           <img src="https://res.cloudinary.com/doctqxch9/image/upload/v1744829056/logocsiCenter_Background_Removed_qu85rk.png" alt="CSI Logo" style="width:100px; height:auto;">
+          <h1 style="margin-top:10px; font-size:24px; font-weight:bold; color:#0078d4;">COMPUTER SOCIETY OF INDIA</h1>
         </td>
       </tr>
       <tr>
