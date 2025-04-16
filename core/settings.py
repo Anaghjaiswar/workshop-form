@@ -196,3 +196,20 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+
+
+from cryptography.hazmat.primitives.serialization import load_pem_private_key, load_pem_public_key
+from decouple import config
+
+private_key = load_pem_private_key(
+    config("PRIVATE_KEY").encode(),
+    password=None
+)
+
+public_key = load_pem_public_key(
+    config("PUBLIC_KEY").encode()
+)
+
+print(private_key)
+print(public_key)

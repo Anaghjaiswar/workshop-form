@@ -4,6 +4,8 @@ from django.views.decorators.csrf import csrf_exempt
 import razorpay
 from rest_framework import status, generics
 from rest_framework.response import Response
+
+from core.utils.rsa_utils import rsa_decrypt
 from .models import Registration
 from .serializers import  RegistrationSerializer, PaymentStatusSerializer, EmailStatusCheckSerializer
 import hmac
@@ -38,6 +40,28 @@ class RegistrationCreateView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         try:
+            # Extract encrypted data from the request body
+            encrypted_data = self.request.data.get('encrypted_data')
+
+            if not encrypted_data:
+                raise ValidationError({"error": "Encrypted data is missing."})
+
+            # Decrypt the data using the private key
+            decrypted_data = rsa_decrypt(encrypted_data.encode())
+
+            # Convert the decrypted bytes to a string and parse it as JSON
+            decrypted_data = json.loads(decrypted_data.decode())
+
+            # Ensure that the decrypted data has the necessary fields
+            full_name = decrypted_data.get('full_name')
+            email = decrypted_data.get('email')
+            student_number = decrypted_data.get('student_number')
+            phone = decrypted_data.get('phone')
+
+            if not full_name or not email or not student_number or not phone:
+                raise ValidationError({"error": "Full name, email, student number, and phone are required."})
+            
+        
             # Wrap the creation process in a transaction so that we can roll back on error
             with transaction.atomic():
                 # Save the instance from serializer
