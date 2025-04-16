@@ -23,21 +23,21 @@ from django.db import transaction, IntegrityError
 from rest_framework.throttling import AnonRateThrottle
 from .custom_throttles import RegistrationCreateThrottle
 
-# RECAPTCHA_SECRET_KEY = settings.RECAPTCHA_SECRET_KEY
-# RECAPTCHA_THRESHOLD = settings.RECAPTCHA_THRESHOLD
+RECAPTCHA_SECRET_KEY = settings.RECAPTCHA_SECRET_KEY
+RECAPTCHA_THRESHOLD = settings.RECAPTCHA_THRESHOLD
 
 
-# def verify_recaptcha(token, action):
-#     url = 'https://www.google.com/recaptcha/api/siteverify'
-#     data = {
-#         'secret': RECAPTCHA_SECRET_KEY,
-#         'response': token,
-#     }
-#     result = requests.post(url, data=data).json()
-#     # Check if verification is successful and the action matches
-#     if result.get('success') and result.get('action') == action:
-#         return result.get('score', 0) >= RECAPTCHA_THRESHOLD
-#     return False
+def verify_recaptcha(token, action):
+    url = 'https://www.google.com/recaptcha/api/siteverify'
+    data = {
+        'secret': RECAPTCHA_SECRET_KEY,
+        'response': token,
+    }
+    result = requests.post(url, data=data).json()
+    # Check if verification is successful and the action matches
+    if result.get('success') and result.get('action') == action:
+        return result.get('score', 0) >= RECAPTCHA_THRESHOLD
+    return False
 
 logger = logging.getLogger(__name__)
 
@@ -55,14 +55,14 @@ class RegistrationCreateView(generics.CreateAPIView):
         return hashlib.sha256(str(otp).encode()).hexdigest()
 
     def perform_create(self, serializer):
-        # recaptcha_token = self.request.data.get("recaptchaToken")
-        # if not recaptcha_token:
-        #     raise ValidationError({"recaptcha": "reCAPTCHA token is missing."})
+        recaptcha_token = self.request.data.get("gRecaptchaToken")
+        if not recaptcha_token:
+            raise ValidationError({"recaptcha": "reCAPTCHA token is missing."})
         
-        # # Verify the token using your separately defined function.
-        # # Make sure the action ("register") matches what you're using on the front end.
-        # if not verify_recaptcha(recaptcha_token, "register"):
-        #     raise ValidationError({"recaptcha": "reCAPTCHA verification failed."})
+        # Verify the token using your separately defined function.
+        # Make sure the action ("register") matches what you're using on the front end.
+        if not verify_recaptcha(recaptcha_token, "register"):
+            raise ValidationError({"recaptcha": "reCAPTCHA verification failed."})
         try:
             # Wrap the creation process in a transaction so that we can roll back on error
             with transaction.atomic():
@@ -144,6 +144,14 @@ class VerifyEmailView(generics.UpdateAPIView):
     serializer_class = RegistrationSerializer
 
     def update(self, request, *args, **kwargs):
+        recaptcha_token = request.data.get("gRecaptchaToken")
+        if not recaptcha_token:
+            raise ValidationError({"recaptcha": "reCAPTCHA token is missing."})
+        
+        if not verify_recaptcha(recaptcha_token, "register"):
+            raise ValidationError({"recaptcha": "reCAPTCHA verification failed."})
+        
+
         otp = request.data.get('otp')
         email = request.data.get('email')
 
@@ -157,7 +165,7 @@ class VerifyEmailView(generics.UpdateAPIView):
 
         if str(registration.email_otp) == otp:
             registration.is_email_verified = True
-            registration.email_otp = None  # Clear OTP
+            registration.email_otp = None 
             registration.otp_expires_at = None
             registration.save()
             return Response({'success': 'Email verified successfully!'}, status=status.HTTP_200_OK)
@@ -254,6 +262,13 @@ class PaymentInitiationView(APIView):
 
     def post(self, request, *args, **kwargs):
         # Extract data from the request
+        recaptcha_token = request.data.get("gRecaptchaToken")
+        if not recaptcha_token:
+            raise ValidationError({"recaptcha": "reCAPTCHA token is missing."})
+
+        if not verify_recaptcha(recaptcha_token, "register"):
+            raise ValidationError({"recaptcha": "reCAPTCHA token is missing."})
+        
         reg_id = request.data.get('registration_id')
         if not reg_id:
             return Response({'error': 'Registration ID is required.'}, status=status.HTTP_400_BAD_REQUEST)
