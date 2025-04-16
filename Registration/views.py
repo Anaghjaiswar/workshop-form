@@ -90,35 +90,40 @@ class RegistrationCreateView(generics.CreateAPIView):
                 # HTML message with inline CSS and CSI logo image
                 html_message = f"""
                 <html>
-                  <body style="margin:0; padding:0; font-family: Arial, sans-serif;">
-                    <table align="center" width="600" style="border:1px solid #dddddd; border-radius:4px; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
-                      <tr>
-                        <td style="padding:20px; text-align:center; background-color:#f7f7f7;">
-                          <img src="https://res.cloudinary.com/dcbla9zbl/image/upload/v1744550174/tnwwrwlomvtgljiobpxg.jpg" alt="CSI Logo" style="width:100px;">
+                <body style="margin:0; padding:0; font-family: Arial, sans-serif;">
+                    <table align="center" width="600" style="border:1px solid #dddddd; border-radius:4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); background-color:#ffffff;">
+                    <tr>
+                        <td style="padding:20px; text-align:center; background-color:#ffffff; border-bottom: 2px solid #eeeeee;">
+                        <img src="https://res.cloudinary.com/doctqxch9/image/upload/v1744829056/logocsiCenter_Background_Removed_qu85rk.png" alt="CSI Logo" style="width:100px; height:auto;">
                         </td>
-                      </tr>
-                      <tr>
+                    </tr>
+                    <tr>
                         <td style="padding:20px;">
-                          <h2 style="color:#2A7AE2; margin-top:0;">Workshop Verification Code</h2>
-                          <p>Dear {instance.full_name},</p>
-                          <p>We received a request to verify your email address: <strong>{instance.email}</strong> as part of your workshop registration.</p>
-                          <p>Your verification code is:</p>
-                          <div style="font-size:24px; font-weight:bold; color:#333; margin: 10px 0;">{otp}</div>
-                          <p>This OTP is valid until <strong>{otp_expiry.strftime('%Y-%m-%d %H:%M:%S')}</strong>.</p>
-                          <p>If you did not request this verification, please ignore this email.</p>
-                          <p>Sincerely,<br>CSI Team</p>
+                        <h2 style="color:#333333; text-align:center;">Render 3.0 Verification Code</h2>
+                        <p>Dear <span style="font-weight:bold; color:#0078d4;">{instance.full_name}</span>,</p>
+                        <p>We received a request to verify your email address as part of your registration.</p>
+                        <div style="margin:20px 0; text-align:center; font-size:24px; font-weight:bold; color:#333333; border:2px dashed #555555; padding:15px; border-radius:8px; background-color:#f9f9f9;">
+                            {otp}
+                        </div>
+                        <p>This OTP is valid until <span style="font-weight:bold; color:#0078d4;">{otp_expiry.strftime('%Y-%m-%d %H:%M:%S')} IST</span>.</p>
+                        <p>If you did not request this verification, please ignore this email.</p>
+                        <p>Best regards,<br><strong>CSI Team</strong></p>
                         </td>
-                      </tr>
+                    </tr>
+                    <tr>
+                        <td style="padding:10px; text-align:center; background-color:#f4f4f4; font-size:14px; color:#555555;">
+                        © 2025 CSI. All rights reserved.
+                        </td>
+                    </tr>
                     </table>
-                  </body>
+                </body>
                 </html>
                 """
-
                 # Send the email with both plain and HTML content
                 send_mail(
                     'Email Verification OTP',
                     plain_message,
-                    'jaiswaranagh@gmail.com',  # Replace with your sender email
+                    'csichapters@gmail.com',  # Replace with your sender email
                     [instance.email],
                     html_message=html_message,
                     fail_silently=False,
@@ -233,7 +238,7 @@ class ResendOTPView(APIView):
         send_mail(
             'Email Verification OTP',
             plain_message,
-            'jaiswaranagh@gmail.com',  # Replace with your sender email
+            'csichapters@gmail.com',  
             [registration.email],
             html_message=html_message,
             fail_silently=False,
