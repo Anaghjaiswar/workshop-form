@@ -40,28 +40,6 @@ class RegistrationCreateView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         try:
-            # Extract encrypted data from the request body
-            encrypted_data = self.request.data.get('encrypted_data')
-
-            if not encrypted_data:
-                raise ValidationError({"error": "Encrypted data is missing."})
-
-            # Decrypt the data using the private key
-            decrypted_data = rsa_decrypt(encrypted_data.encode())
-
-            # Convert the decrypted bytes to a string and parse it as JSON
-            decrypted_data = json.loads(decrypted_data.decode())
-
-            # Ensure that the decrypted data has the necessary fields
-            full_name = decrypted_data.get('full_name')
-            email = decrypted_data.get('email')
-            student_number = decrypted_data.get('student_number')
-            phone = decrypted_data.get('phone')
-
-            if not full_name or not email or not student_number or not phone:
-                raise ValidationError({"error": "Full name, email, student number, and phone are required."})
-            
-        
             # Wrap the creation process in a transaction so that we can roll back on error
             with transaction.atomic():
                 # Save the instance from serializer
@@ -235,76 +213,57 @@ class ResendOTPView(APIView):
 class PaymentInitiationView(APIView):
 
     def post(self, request, *args, **kwargs):
-        # Extract encrypted data from the request
-        encrypted_data = request.data.get('encrypted_data')
-        if not encrypted_data:
-            return Response({'error': 'Encrypted data is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        # Extract data from the request
+        reg_id = request.data.get('registration_id')
+        if not reg_id:
+            return Response({'error': 'Registration ID is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            # Decrypt the data using the private key
-            decrypted_data = rsa_decrypt(encrypted_data.encode())
+            registration = Registration.objects.get(id=reg_id)
+        except Registration.DoesNotExist:
+            return Response({'error': 'Registration not found.'}, status=status.HTTP_404_NOT_FOUND)
+        
 
-            # Convert the decrypted bytes to a string and parse it as JSON
-            decrypted_data = json.loads(decrypted_data.decode())
+        if not registration.is_email_verified:
+            return Response({'error': 'Email is not verified. Please verify your email before proceeding.'}, 
+                            status=status.HTTP_400_BAD_REQUEST)
 
-            # Extract registration ID from the decrypted data
-            reg_id = decrypted_data.get('registration_id')
-            if not reg_id:
-                return Response({'error': 'Registration ID is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        if registration.payment_status == 'success':
+            return Response({'error': 'Payment already completed.'}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Check if registration exists
-            try:
-                registration = Registration.objects.get(id=reg_id)
-            except Registration.DoesNotExist:
-                return Response({'error': 'Registration not found.'}, status=status.HTTP_404_NOT_FOUND)
+        # Razorpay client initialization
+        client = razorpay.Client(auth=(settings.RAZORPAY_KEY, settings.RAZORPAY_SECRET))
 
-            # Check email verification and payment status
-            if not registration.is_email_verified:
-                return Response({'error': 'Email is not verified. Please verify your email before proceeding.'}, 
-                                 status=status.HTTP_400_BAD_REQUEST)
+        # Create an order
+        order_data = {
+            "amount": 100, 
+            "currency": "INR",
+            "receipt": f"receipt_{reg_id}",
+            "payment_capture": 1 
+        }
 
-            if registration.payment_status == 'success':
-                return Response({'error': 'Payment already completed.'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            order = client.order.create(data=order_data)
+            order_id = order['id']
 
-            # Razorpay client initialization
-            client = razorpay.Client(auth=(settings.RAZORPAY_KEY, settings.RAZORPAY_SECRET))
+            # Save the order_id to the registration model
+            registration.order_id = order_id
+            registration.payment_reference = order_id  # Temporary use order_id as reference
+            registration.save()
 
-            # Create an order
-            order_data = {
-                "amount": 100,  # For example, 100 INR
-                "currency": "INR",
-                "receipt": f"receipt_{reg_id}",
-                "payment_capture": 1  # Auto-capture payment
-            }
-
-            try:
-                # Create an order in Razorpay
-                order = client.order.create(data=order_data)
-                order_id = order['id']
-
-                # Save the order_id to the registration model
-                registration.order_id = order_id
-                registration.payment_reference = order_id  # Temporary use order_id as reference
-                registration.save()
-
-                # Send order details to the frontend
-                return Response({
-                    "order_id": order_id,
-                    "amount": order_data['amount'],
-                    "currency": order_data['currency'],
-                    "razorpay_key": settings.RAZORPAY_KEY,
-                    "name": registration.full_name,
-                    "email": registration.email,
-                    "contact": registration.phone
-                }, status=status.HTTP_200_OK)
-
-            except Exception as e:
-                return Response({'error': 'Failed to create Razorpay order.', 'details': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            # Send order details to the frontend
+            return Response({
+                "order_id": order_id,
+                "amount": order_data['amount'],
+                "currency": order_data['currency'],
+                "razorpay_key": settings.RAZORPAY_KEY,
+                "name": registration.full_name,
+                "email": registration.email,
+                "contact": registration.phone
+            }, status=status.HTTP_200_OK)
 
         except Exception as e:
-            # Log the error and return a response
-            return Response({'error': 'An error occurred during decryption or order creation.', 'details': str(e)},
-                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'error': 'Failed to create Razorpay order.', 'details': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 logger = logging.getLogger(__name__)
