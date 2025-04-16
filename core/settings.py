@@ -150,6 +150,11 @@ DATABASES = {
     }
 }
 
+RECAPTCHA_SECRET_KEY = config('RECAPTCHA_SECRET_KEY')
+RECAPTCHA_THRESHOLD = config('RECAPTCHA_THRESHOLD', cast=float)
+
+
+
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -211,5 +216,5 @@ public_key = load_pem_public_key(
     config("PUBLIC_KEY").encode()
 )
 
-print(private_key)
-print(public_key)
+# print(private_key)
+# print(public_key)

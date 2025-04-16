@@ -2,6 +2,7 @@ import random
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import razorpay
+import requests
 from rest_framework import status, generics
 from rest_framework.response import Response
 
@@ -22,6 +23,21 @@ from django.db import transaction, IntegrityError
 from rest_framework.throttling import AnonRateThrottle
 from .custom_throttles import RegistrationCreateThrottle
 
+# RECAPTCHA_SECRET_KEY = settings.RECAPTCHA_SECRET_KEY
+# RECAPTCHA_THRESHOLD = settings.RECAPTCHA_THRESHOLD
+
+
+# def verify_recaptcha(token, action):
+#     url = 'https://www.google.com/recaptcha/api/siteverify'
+#     data = {
+#         'secret': RECAPTCHA_SECRET_KEY,
+#         'response': token,
+#     }
+#     result = requests.post(url, data=data).json()
+#     # Check if verification is successful and the action matches
+#     if result.get('success') and result.get('action') == action:
+#         return result.get('score', 0) >= RECAPTCHA_THRESHOLD
+#     return False
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +55,14 @@ class RegistrationCreateView(generics.CreateAPIView):
         return hashlib.sha256(str(otp).encode()).hexdigest()
 
     def perform_create(self, serializer):
+        # recaptcha_token = self.request.data.get("recaptchaToken")
+        # if not recaptcha_token:
+        #     raise ValidationError({"recaptcha": "reCAPTCHA token is missing."})
+        
+        # # Verify the token using your separately defined function.
+        # # Make sure the action ("register") matches what you're using on the front end.
+        # if not verify_recaptcha(recaptcha_token, "register"):
+        #     raise ValidationError({"recaptcha": "reCAPTCHA verification failed."})
         try:
             # Wrap the creation process in a transaction so that we can roll back on error
             with transaction.atomic():
@@ -173,29 +197,37 @@ class ResendOTPView(APIView):
         )
 
         html_message = f"""
-        <html>
-          <body style="margin:0; padding:0; font-family: Arial, sans-serif;">
-            <table align="center" width="600" style="border:1px solid #dddddd; border-radius:4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-              <tr>
-                <td style="padding:20px; text-align:center; background-color:#f7f7f7;">
-                  <img src="https://res.cloudinary.com/dcbla9zbl/image/upload/v1744550174/tnwwrwlomvtgljiobpxg.jpg" alt="CSI Logo" style="width:100px;">
-                </td>
-              </tr>
-              <tr>
-                <td style="padding:20px;">
-                  <h2 style="color:#2A7AE2;">Resend OTP - Verification Code</h2>
-                  <p>Dear {registration.full_name},</p>
-                  <p>Your new OTP for email verification is:</p>
-                  <div style="font-size:24px; font-weight:bold; color:#333; margin: 10px 0;">{otp}</div>
-                  <p>This OTP is valid until <strong>{otp_expiry.strftime('%Y-%m-%d %H:%M:%S')} IST</strong>.</p>
-                  <p>If you did not request this, please ignore this email.</p>
-                  <p>Sincerely,<br>CSI Team</p>
-                </td>
-              </tr>
-            </table>
-          </body>
-        </html>
-        """
+<html>
+  <body style="margin:0; padding:0; font-family: Arial, sans-serif;">
+    <table align="center" width="600" style="border:1px solid #dddddd; border-radius:4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); background-color:#ffffff;">
+      <tr>
+        <td style="padding:20px; text-align:center; background-color:#ffffff; border-bottom: 2px solid #eeeeee;">
+          <img src="https://res.cloudinary.com/doctqxch9/image/upload/v1744829056/logocsiCenter_Background_Removed_qu85rk.png" alt="CSI Logo" style="width:100px; height:auto;">
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:20px;">
+          <h2 style="color:#333333; text-align:center;">Render 3.0 Verification Code</h2>
+          <p>Dear <span style="font-weight:bold; color:#0078d4;">{registration.full_name}</span>,</p>
+          <p>We received a request to verify your email address as part of your registration.</p>
+          <div style="margin:20px 0; text-align:center; font-size:24px; font-weight:bold; color:#333333; border:2px dashed #555555; padding:15px; border-radius:8px; background-color:#f9f9f9;">
+            {otp}
+          </div>
+          <p>This OTP is valid until <span style="font-weight:bold; color:#0078d4;">{otp_expiry.strftime('%Y-%m-%d %H:%M:%S')} IST</span>.</p>
+          <p>If you did not request this verification, please ignore this email.</p>
+          <p>Best regards,<br><strong>CSI Team</strong></p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:10px; text-align:center; background-color:#f4f4f4; font-size:14px; color:#555555;">
+          © 2025 CSI. All rights reserved.
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+"""
+
 
         # Send the email with both plain and HTML content
         send_mail(
