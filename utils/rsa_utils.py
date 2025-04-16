@@ -2,8 +2,12 @@ from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.serialization import load_pem_private_key, load_pem_public_key
 from decouple import config
+import logging
 
 # Load keys
+
+logger = logging.getLogger(__name__)
+
 private_key = load_pem_private_key(
     config("PRIVATE_KEY").encode(),
     password=None
@@ -47,6 +51,7 @@ def rsa_decrypt(encrypted_message: bytes) -> bytes:
         ValueError: If decryption fails with both padding methods.
     """
     try:
+        logger.debug("Attempting OAEP decryption...")
         # Attempt decryption with OAEP padding
         return private_key.decrypt(
             encrypted_message,
@@ -57,13 +62,14 @@ def rsa_decrypt(encrypted_message: bytes) -> bytes:
             )
         )
     except Exception as oaep_error:
-        print(f"OAEP decryption failed: {str(oaep_error)}")
+        logger.error(f"OAEP decryption failed: {str(oaep_error)}")
         try:
+            logger.debug("Attempting PKCS#1v1.5 decryption...")
             # Fallback to PKCS#1v1.5 padding
             return private_key.decrypt(
                 encrypted_message,
                 padding.PKCS1v15()
             )
         except Exception as pkcs_error:
-            print(f"PKCS#1v1.5 decryption failed: {str(pkcs_error)}")
+            logger.critical(f"PKCS#1v1.5 decryption failed: {str(pkcs_error)}")
             raise ValueError("Decryption failed with both OAEP and PKCS#1v1.5 padding.") from pkcs_error
