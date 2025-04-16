@@ -378,20 +378,35 @@ def razorpay_webhook(request):
             "Your payment was successful. Thank you for registering!"
         )
         html_message = f"""
-        <html>
-        <body>
-            <div style="font-family: Arial, sans-serif;">
-            <h2 style="color: #2A7AE2;">Workshop Registration - Payment Successful</h2>
-            <p>Dear {registration.full_name},</p>
-            <p>Your payment of <strong>₹{payment_entity.get('amount', 'N/A')/100:.2f}</strong> for the workshop has been successfully received.</p>
-            <p>Your Payment ID is: <strong>{payment_id}</strong></p>
-            <p>We are excited to have you join us!</p>
-            <p><img src="https://res.cloudinary.com/dcbla9zbl/image/upload/v1744550174/tnwwrwlomvtgljiobpxg.jpg" alt="Your Logo" style="width:150px;"></p>
-            <p>Thank you for registering.</p>
-            <p>Best regards,<br>Workshop Team</p>
-            </div>
-        </body>
-        </html>
+<html>
+  <body style="margin:0; padding:0; font-family: Arial, sans-serif; background-color:#f4f4f4;">
+    <table align="center" width="600" style="border:1px solid #dddddd; border-radius:4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); background-color:#ffffff;">
+      <tr>
+        <td style="padding:20px; text-align:center; background-color:#ffffff; border-bottom:2px solid #eeeeee;">
+          <img src="https://res.cloudinary.com/doctqxch9/image/upload/v1744829056/logocsiCenter_Background_Removed_qu85rk.png" alt="CSI Logo" style="width:100px; height:auto;">
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:20px;">
+          <h2 style="color:#2A7AE2; text-align:center;">Workshop Registration - Payment Successful</h2>
+          <p>Dear <span style="font-weight:bold; color:#0078d4;">{registration.full_name}</span>,</p>
+          <p>Your payment of <strong style="color:#28a745;">₹{payment_entity.get('amount', 'N/A') / 100:.2f}</strong> for the workshop has been successfully received.</p>
+          <p>Your Payment ID is: <span style="font-weight:bold; color:#0078d4;">{payment_id}</span></p>
+          <p>We are excited to have you join us and look forward to a great workshop!</p>
+          <p>Thank you for registering.</p>
+          <p>Best regards,<br><strong>Workshop Team</strong></p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:10px; text-align:center; background-color:#f4f4f4; font-size:14px; color:#555555;">
+          © 2025 Workshop Team. All rights reserved.
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+
+
         """
 
         send_mail(
@@ -437,27 +452,34 @@ def razorpay_webhook(request):
             "Best regards,\nWorkshop Team"
         )
         html_message = f"""
-        <html>
-            <body style="font-family: Arial, sans-serif; margin:0; padding:0;">
-            <table align="center" width="600" style="border:1px solid #dddddd; border-radius:4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                <tr>
-                <td style="padding:20px; text-align:center; background-color:#f7f7f7;">
-                    <img src="https://res.cloudinary.com/dcbla9zbl/image/upload/v1744550174/tnwwrwlomvtgljiobpxg.jpg" alt="CSI Logo" style="width:100px;">
-                </td>
-                </tr>
-                <tr>
-                <td style="padding:20px;">
-                    <h2 style="color:#D9534F; margin-top:0;">Payment Failed</h2>
-                    <p>Dear {registration.full_name},</p>
-                    <p>Unfortunately, your payment of <strong>₹{payment_amount/100:.2f}</strong> for the workshop has failed.</p>
-                    <p>Your Payment ID is: <strong>{payment_id}</strong></p>
-                    <p>Please retry your payment or contact our support if you need assistance.</p>
-                    <p>Best regards,<br>Workshop Team</p>
-                </td>
-                </tr>
-            </table>
-            </body>
-        </html>
+<html>
+  <body style="margin:0; padding:0; font-family: Arial, sans-serif; background-color:#f4f4f4;">
+    <table align="center" width="600" style="border:1px solid #dddddd; border-radius:4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); background-color:#ffffff;">
+      <tr>
+        <td style="padding:20px; text-align:center; background-color:#ffffff; border-bottom:2px solid #eeeeee;">
+          <img src="https://res.cloudinary.com/doctqxch9/image/upload/v1744829056/logocsiCenter_Background_Removed_qu85rk.png" alt="CSI Logo" style="width:100px; height:auto;">
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:20px;">
+          <h2 style="color:#D9534F; text-align:center;">Payment Failed</h2>
+          <p>Dear <span style="font-weight:bold; color:#0078d4;">{registration.full_name}</span>,</p>
+          <p>Unfortunately, your payment of <strong style="color:#d9534f;">₹{payment_amount / 100:.2f}</strong> for the workshop has failed.</p>
+          <p>Your Payment ID is: <span style="font-weight:bold; color:#0078d4;">{payment_id}</span></p>
+          <p>Please retry your payment or contact our support if you need assistance.</p>
+          <p>Thank you for your patience.</p>
+          <p>Best regards,<br><strong>Workshop Team</strong></p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:10px; text-align:center; background-color:#f4f4f4; font-size:14px; color:#555555;">
+          © 2025 Workshop Team. All rights reserved.
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+
         """
 
         send_mail(
@@ -517,29 +539,35 @@ class CheckEmailStatusView(APIView):
 
 
                     html_message = f"""
-                    <html>
-                      <body style="margin:0; padding:0; font-family: Arial, sans-serif;">
-                        <table align="center" width="600" style="border:1px solid #dddddd; border-radius:4px; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
-                          <tr>
-                            <td style="padding:20px; text-align:center; background-color:#f7f7f7;">
-                              <img src="https://res.cloudinary.com/dcbla9zbl/image/upload/v1744550174/tnwwrwlomvtgljiobpxg.jpg" alt="CSI Logo" style="width:100px;">
-                            </td>
-                          </tr>
-                          <tr>
-                            <td style="padding:20px;">
-                              <h2 style="color:#2A7AE2; margin-top:0;">Workshop OTP Verification</h2>
-                              <p>Dear {registration.full_name},</p>
-                              <p>We received a request to verify your email address: <strong>{registration.email}</strong> as part of your workshop registration.</p>
-                              <p>Your OTP is:</p>
-                              <div style="font-size:24px; font-weight:bold; color:#333; margin: 10px 0;">{otp}</div>
-                              <p>This OTP is valid until <strong>{otp_expiry.strftime('%Y-%m-%d %H:%M:%S')} IST</strong>.</p>
-                              <p>If you did not request this, please ignore this email.</p>
-                              <p>Sincerely,<br>Workshop Team</p>
-                            </td>
-                          </tr>
-                        </table>
-                      </body>
-                    </html>
+<html>
+  <body style="margin:0; padding:0; font-family: Arial, sans-serif;">
+    <table align="center" width="600" style="border:1px solid #dddddd; border-radius:4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); background-color:#ffffff;">
+      <tr>
+        <td style="padding:20px; text-align:center; background-color:#ffffff; border-bottom: 2px solid #eeeeee;">
+          <img src="https://res.cloudinary.com/doctqxch9/image/upload/v1744829056/logocsiCenter_Background_Removed_qu85rk.png" alt="CSI Logo" style="width:100px; height:auto;">
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:20px;">
+          <h2 style="color:#333333; text-align:center;">Render 3.0 Verification Code</h2>
+          <p>Dear <span style="font-weight:bold; color:#0078d4;">{registration.full_name}</span>,</p>
+          <p>We received a request to verify your email address as part of your registration.</p>
+          <div style="margin:20px 0; text-align:center; font-size:24px; font-weight:bold; color:#333333; border:2px dashed #555555; padding:15px; border-radius:8px; background-color:#f9f9f9;">
+            {otp}
+          </div>
+          <p>This OTP is valid until <span style="font-weight:bold; color:#0078d4;">{otp_expiry.strftime('%Y-%m-%d %H:%M:%S')} IST</span>.</p>
+          <p>If you did not request this verification, please ignore this email.</p>
+          <p>Best regards,<br><strong>CSI Team</strong></p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:10px; text-align:center; background-color:#f4f4f4; font-size:14px; color:#555555;">
+          © 2025 CSI. All rights reserved.
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
                     """
 
                     send_mail(
