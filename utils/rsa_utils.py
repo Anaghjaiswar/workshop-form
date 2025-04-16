@@ -35,18 +35,35 @@ def rsa_encrypt(message: bytes) -> bytes:
 def rsa_decrypt(encrypted_message: bytes) -> bytes:
     """
     Decrypt an RSA encrypted message using the RSA private key.
-
+    Tries both OAEP and PKCS#1v1.5 padding.
+    
     Args:
         encrypted_message (bytes): The encrypted message to decrypt.
-
+        
     Returns:
         bytes: The decrypted plaintext message.
+        
+    Raises:
+        ValueError: If decryption fails with both padding methods.
     """
-    return private_key.decrypt(
-        encrypted_message,
-        padding.OAEP(
-            mgf=padding.MGF1(algorithm=hashes.SHA256()),
-            algorithm=hashes.SHA256(),
-            label=None
+    try:
+        # Attempt decryption with OAEP padding
+        return private_key.decrypt(
+            encrypted_message,
+            padding.OAEP(
+                mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                algorithm=hashes.SHA256(),
+                label=None
+            )
         )
-    )
+    except Exception as oaep_error:
+        print(f"OAEP decryption failed: {str(oaep_error)}")
+        try:
+            # Fallback to PKCS#1v1.5 padding
+            return private_key.decrypt(
+                encrypted_message,
+                padding.PKCS1v15()
+            )
+        except Exception as pkcs_error:
+            print(f"PKCS#1v1.5 decryption failed: {str(pkcs_error)}")
+            raise ValueError("Decryption failed with both OAEP and PKCS#1v1.5 padding.") from pkcs_error
