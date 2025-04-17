@@ -8,7 +8,7 @@ from rest_framework.response import Response
 
 from utils.rsa_utils import rsa_decrypt
 from .models import Registration
-from .serializers import  RegistrationSerializer, PaymentStatusSerializer, EmailStatusCheckSerializer
+from .serializers import  RegistrationSerializer, PaymentStatusSerializer, EmailStatusCheckSerializer,StatusSerializer
 import hmac
 import hashlib
 from django.conf import settings
@@ -153,21 +153,27 @@ class VerifyEmailView(generics.UpdateAPIView):
     def update(self, request, *args, **kwargs):
         recaptcha_token = request.data.get("gRecaptchaToken")
         if not recaptcha_token:
+            logger.warning("Missing reCAPTCHA token for email=%s", email)
             raise ValidationError({"recaptcha": "reCAPTCHA token is missing."})
         
         if not verify_recaptcha(recaptcha_token, "register"):
+            logger.warning("reCAPTCHA verification failed for email=%s", email)
             raise ValidationError({"recaptcha": "reCAPTCHA verification failed."})
         
 
         otp = request.data.get('otp')
         email = request.data.get('email')
+        logger.debug("VerifyEmail called for email=%s", email)
 
         try:
             registration = Registration.objects.get(email=email)
+            logger.info("Found registration id=%s for email=%s", registration.id, email)
         except Registration.DoesNotExist:
+            logger.error("Registration not found for email=%s", email)
             return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
 
         if not registration.is_otp_valid():
+            logger.info("OTP expired for registration id=%s", registration.id)
             return Response({'error': 'OTP has expired.'}, status=status.HTTP_400_BAD_REQUEST)
 
         if str(registration.email_otp) == otp:
@@ -175,8 +181,10 @@ class VerifyEmailView(generics.UpdateAPIView):
             registration.email_otp = None 
             registration.otp_expires_at = None
             registration.save()
+            logger.info("Email verified successfully for registration id=%s", registration.id)
             return Response({'success': 'Email verified successfully!'}, status=status.HTTP_200_OK)
         else:
+            logger.warning("Invalid OTP attempt for registration id=%s", registration.id)
             return Response({'error': 'Invalid OTP.'}, status=status.HTTP_400_BAD_REQUEST)
 
 class ResendOTPThrottle(AnonRateThrottle):
@@ -550,6 +558,19 @@ class CheckEmailStatusThrottle(AnonRateThrottle):
 class CheckEmailStatusView(APIView):
     throttle_classes = [CheckEmailStatusThrottle]
     def post(self, request, *args, **kwargs):
+        logger.info("Check email status request received.")
+        recaptcha_token = request.data.get('gRecaptchaToken')
+
+        if not recaptcha_token:
+            logger.warning("reCAPTCHA token is missing.")
+            return Response({'error': 'reCAPTCHA token is missing.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Verify the reCAPTCHA token
+        if not verify_recaptcha(recaptcha_token, "register"):
+            logger.warning("reCAPTCHA verification failed for token: %s", recaptcha_token)
+            return Response({'error': 'reCAPTCHA verification failed.'}, status=status.HTTP_400_BAD_REQUEST)
+
+
         serializer = EmailStatusCheckSerializer(data=request.data)
         if serializer.is_valid():
             email = serializer.validated_data['email']
@@ -649,3 +670,18 @@ class CheckEmailStatusView(APIView):
                 }, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+
+class RegistrationListView(APIView):
+    def get(self, request, *args, **kwargs):
+        registrations = Registration.objects.all().order_by('-created_at')
+        serializer = StatusSerializer(registrations, many=True)
+        success_count = Registration.objects.filter(payment_status='success').count()
+        failed_count = Registration.objects.filter(payment_status='failed').count()
+        pending_count = Registration.objects.filter(payment_status='pending').count()
+        response_data = {
+            "success_count": success_count,
+            "failed_count": failed_count,
+            "pending_count": pending_count,
+            "users": serializer.data
+        }
+        return Response(response_data)

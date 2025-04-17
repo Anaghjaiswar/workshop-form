@@ -73,3 +73,9 @@ class EmailStatusCheckSerializer(serializers.Serializer):
         if not value.endswith('@akgec.ac.in'):
             raise serializers.ValidationError("Email must end with '@akgec.ac.in'.")
         return value
+    
+
+class StatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Registration
+        fields = ['full_name', 'payment_status', 'phone', 'email', 'created_at']
