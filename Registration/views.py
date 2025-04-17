@@ -24,7 +24,7 @@ from rest_framework.throttling import AnonRateThrottle
 from .custom_throttles import RegistrationCreateThrottle
 
 RECAPTCHA_SECRET_KEY = settings.RECAPTCHA_SECRET_KEY
-RECAPTCHA_THRESHOLD = settings.RECAPTCHA_THRESHOLD
+RECAPTCHA_THRESHOLD = 0.5
 
 
 def verify_recaptcha(token, action):
@@ -183,86 +183,96 @@ class ResendOTPThrottle(AnonRateThrottle):
     rate = '3/min'
 
 
-class ResendOTPView(APIView):
-    """
-    API endpoint to resend the OTP to a user's email.
-    """
-    throttle_classes = [ResendOTPThrottle]
+# class ResendOTPView(APIView):
+#     """
+#     API endpoint to resend the OTP to a user's email.
+#     """
+#     throttle_classes = [ResendOTPThrottle]
     
-    def generate_otp(self):
-        """Generate a random 6-digit OTP."""
-        return random.randint(100000, 999999)
+#     def generate_otp(self):
+#         """Generate a random 6-digit OTP."""
+#         return random.randint(100000, 999999)
 
-    def post(self, request, *args, **kwargs):
-        email = request.data.get('email')
-        if not email:
-            return Response({'error': 'Email is required.'}, status=status.HTTP_400_BAD_REQUEST)
+#     def post(self, request, *args, **kwargs):
+#         logger.info("Resend OTP request received.")
+#         recaptcha_token = request.data.get('gRecaptchaToken')
+#         if not recaptcha_token:
+#             logger.warning("reCAPTCHA token is missing.")
+#             raise ValidationError({"recaptcha": "reCAPTCHA token is missing."})
 
-        try:
-            registration = Registration.objects.get(email=email)
-        except Registration.DoesNotExist:
-            return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
+#         # Verify the reCAPTCHA token
+#         if not verify_recaptcha(recaptcha_token, "register"):
+#             logger.warning("reCAPTCHA verification failed for token: %s", recaptcha_token)
+#             raise ValidationError({"recaptcha": "reCAPTCHA verification failed."})
+#         email = request.data.get('email')
+#         if not email:
+#             return Response({'error': 'Email is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Generate a new OTP and update the instance with expiry time (e.g., 10 minutes from now)
-        otp = self.generate_otp()
-        otp_expiry = timezone.localtime(now() + timedelta(minutes=10))
-        registration.email_otp = str(otp)
-        registration.otp_expires_at = otp_expiry
-        registration.save()
+#         try:
+#             registration = Registration.objects.get(email=email)
+#         except Registration.DoesNotExist:
+#             return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-        plain_message = (
-            f"Dear {registration.full_name},\n\n"
-            f"Your OTP for email verification is: {otp}\n\n"
-            f"This OTP is valid until {otp_expiry.strftime('%Y-%m-%d %H:%M:%S')}.\n\n"
-            "If you did not request this verification, please ignore this email.\n\n"
-            "Sincerely,\nCSI Team"
-        )
+#         # Generate a new OTP and update the instance with expiry time (e.g., 10 minutes from now)
+#         otp = self.generate_otp()
+#         otp_expiry = timezone.localtime(now() + timedelta(minutes=10))
+#         registration.email_otp = str(otp)
+#         registration.otp_expires_at = otp_expiry
+#         registration.save()
 
-        html_message = f"""
-<html>
-  <body style="margin:0; padding:0; font-family: Arial, sans-serif;">
-    <table align="center" width="600" style="border:1px solid #dddddd; border-radius:4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); background-color:#ffffff;">
-      <tr>
-        <td style="padding:20px; text-align:center; background-color:#ffffff; border-bottom: 2px solid #eeeeee;">
-          <img src="https://res.cloudinary.com/doctqxch9/image/upload/v1744829056/logocsiCenter_Background_Removed_qu85rk.png" alt="CSI Logo" style="width:100px; height:auto;">
-          <h1 style="margin-top:10px; font-size:24px; font-weight:bold; color:#0078d4;">COMPUTER SOCIETY OF INDIA</h1>
-        </td>
-      </tr>
-      <tr>
-        <td style="padding:20px;">
-          <h2 style="color:#333333; text-align:center;">Render 3.0 Verification Code</h2>
-          <p>Dear <span style="font-weight:bold; color:#0078d4;">{registration.full_name}</span>,</p>
-          <p>We received a request to verify your email address as part of your registration.</p>
-          <div style="margin:20px 0; text-align:center; font-size:24px; font-weight:bold; color:#333333; border:2px dashed #555555; padding:15px; border-radius:8px; background-color:#f9f9f9;">
-            {otp}
-          </div>
-          <p>This OTP is valid until <span style="font-weight:bold; color:#0078d4;">{otp_expiry.strftime('%Y-%m-%d %H:%M:%S')} IST</span>.</p>
-          <p>If you did not request this verification, please ignore this email.</p>
-          <p>Best regards,<br><strong>CSI Team</strong></p>
-        </td>
-      </tr>
-      <tr>
-        <td style="padding:10px; text-align:center; background-color:#f4f4f4; font-size:14px; color:#555555;">
-          © 2025 CSI. All rights reserved.
-        </td>
-      </tr>
-    </table>
-  </body>
-</html>
-"""
+#         plain_message = (
+#             f"Dear {registration.full_name},\n\n"
+#             f"Your OTP for email verification is: {otp}\n\n"
+#             f"This OTP is valid until {otp_expiry.strftime('%Y-%m-%d %H:%M:%S')}.\n\n"
+#             "If you did not request this verification, please ignore this email.\n\n"
+#             "Sincerely,\nCSI Team"
+#         )
+
+#         html_message = f"""
+# <html>
+#   <body style="margin:0; padding:0; font-family: Arial, sans-serif;">
+#     <table align="center" width="600" style="border:1px solid #dddddd; border-radius:4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); background-color:#ffffff;">
+#       <tr>
+#         <td style="padding:20px; text-align:center; background-color:#ffffff; border-bottom: 2px solid #eeeeee;">
+#           <img src="https://res.cloudinary.com/doctqxch9/image/upload/v1744829056/logocsiCenter_Background_Removed_qu85rk.png" alt="CSI Logo" style="width:100px; height:auto;">
+#           <h1 style="margin-top:10px; font-size:24px; font-weight:bold; color:#0078d4;">COMPUTER SOCIETY OF INDIA</h1>
+#         </td>
+#       </tr>
+#       <tr>
+#         <td style="padding:20px;">
+#           <h2 style="color:#333333; text-align:center;">Render 3.0 Verification Code</h2>
+#           <p>Dear <span style="font-weight:bold; color:#0078d4;">{registration.full_name}</span>,</p>
+#           <p>We received a request to verify your email address as part of your registration.</p>
+#           <div style="margin:20px 0; text-align:center; font-size:24px; font-weight:bold; color:#333333; border:2px dashed #555555; padding:15px; border-radius:8px; background-color:#f9f9f9;">
+#             {otp}
+#           </div>
+#           <p>This OTP is valid until <span style="font-weight:bold; color:#0078d4;">{otp_expiry.strftime('%Y-%m-%d %H:%M:%S')} IST</span>.</p>
+#           <p>If you did not request this verification, please ignore this email.</p>
+#           <p>Best regards,<br><strong>CSI Team</strong></p>
+#         </td>
+#       </tr>
+#       <tr>
+#         <td style="padding:10px; text-align:center; background-color:#f4f4f4; font-size:14px; color:#555555;">
+#           © 2025 CSI. All rights reserved.
+#         </td>
+#       </tr>
+#     </table>
+#   </body>
+# </html>
+# """
 
 
-        # Send the email with both plain and HTML content
-        send_mail(
-            'Email Verification OTP',
-            plain_message,
-            'csichapters@gmail.com',  
-            [registration.email],
-            html_message=html_message,
-            fail_silently=False,
-        )
+#         # Send the email with both plain and HTML content
+#         send_mail(
+#             'Email Verification OTP',
+#             plain_message,
+#             'csichapters@gmail.com',  
+#             [registration.email],
+#             html_message=html_message,
+#             fail_silently=False,
+#         )
 
-        return Response({'success': 'OTP resent successfully.'}, status=status.HTTP_200_OK)
+#         return Response({'success': 'OTP resent successfully.'}, status=status.HTTP_200_OK)
 
 
 class PaymentInitiationView(APIView):

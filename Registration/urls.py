@@ -1,7 +1,7 @@
 # urls.py
 
 from django.urls import path
-from .views import RegistrationCreateView, PaymentInitiationView, razorpay_webhook, PaymentStatusView, VerifyEmailView, ResendOTPView, CheckEmailStatusView
+from .views import RegistrationCreateView, PaymentInitiationView, razorpay_webhook, PaymentStatusView, VerifyEmailView, CheckEmailStatusView
 
 urlpatterns = [
     path('registrations/', RegistrationCreateView.as_view(), name='registration-create'),
@@ -9,6 +9,6 @@ urlpatterns = [
     path('razorpay-webhook/', razorpay_webhook, name='razorpay-webhook'), 
     path('payment-status/<int:id>/', PaymentStatusView.as_view(), name='payment-status'),
     path('verify-email/', VerifyEmailView.as_view(), name='verify-email'),
-    path('resend-otp/', ResendOTPView.as_view(), name='resend-otp'),
+    # path('resend-otp/', ResendOTPView.as_view(), name='resend-otp'),
     path('check-email-status/', CheckEmailStatusView.as_view(), name='check-email-status'),
 ]
