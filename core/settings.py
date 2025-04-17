@@ -92,7 +92,7 @@ RAZORPAY_WEBHOOK_SECRET = config('RAZORPAY_WEBHOOK_SECRET')
 
 CORS_ALLOWED_ORIGINS = [
     "https://render.csiakgec.co.in", 
-    # "http://localhost:3000", 
+    "http://localhost:3000", 
 ]
 
 # Allow cookies and credentials to be sent along with requests
