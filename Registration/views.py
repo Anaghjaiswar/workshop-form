@@ -676,11 +676,13 @@ class RegistrationListView(APIView):
         registrations = Registration.objects.all().filter(payment_status='success').order_by('-created_at')
         serializer = StatusSerializer(registrations, many=True)
         success_count = Registration.objects.filter(payment_status='success').count()
+        attendance_count = Registration.objects.filter(is_present=True).count()
 
 
 
         response_data = {
             "success_count": success_count,
+            "attendance_count": attendance_count,
             "users": serializer.data
         }
         return Response(response_data)

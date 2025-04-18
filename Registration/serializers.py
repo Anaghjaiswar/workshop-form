@@ -83,12 +83,13 @@ class StatusSerializer(serializers.ModelSerializer):
     email = serializers.EmailField()
     student_number = serializers.CharField(max_length=10)
     created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
+    is_present = serializers.BooleanField()
 
     
     
     class Meta:
         model = Registration
-        fields = ['id','full_name', 'phone', 'email','student_number', 'created_at']
+        fields = ['id','full_name', 'phone', 'email','student_number','is_present', 'created_at']
 
 
 class Day1AttendanceSerializer(serializers.Serializer):
