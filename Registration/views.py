@@ -8,7 +8,7 @@ from rest_framework.response import Response
 
 from utils.rsa_utils import rsa_decrypt
 from .models import Registration
-from .serializers import  RegistrationSerializer, PaymentStatusSerializer, EmailStatusCheckSerializer,StatusSerializer
+from .serializers import  Day1AttendanceSerializer, RegistrationSerializer, PaymentStatusSerializer, EmailStatusCheckSerializer,StatusSerializer
 import hmac
 import hashlib
 from django.conf import settings
@@ -673,15 +673,59 @@ class CheckEmailStatusView(APIView):
 
 class RegistrationListView(APIView):
     def get(self, request, *args, **kwargs):
-        registrations = Registration.objects.all().order_by('-created_at')
+        registrations = Registration.objects.all().filter(payment_status='success').order_by('-created_at')
         serializer = StatusSerializer(registrations, many=True)
         success_count = Registration.objects.filter(payment_status='success').count()
-        failed_count = Registration.objects.filter(payment_status='failed').count()
-        pending_count = Registration.objects.filter(payment_status='pending').count()
+
+
+
         response_data = {
             "success_count": success_count,
-            "failed_count": failed_count,
-            "pending_count": pending_count,
             "users": serializer.data
         }
         return Response(response_data)
+    
+
+class MarkDay1AttendanceView(APIView):
+    """
+    POST a list of { id, present } → update the `is_present` field for day 1 attendance.
+    """
+
+    def post(self, request, *args, **kwargs):
+        # Validate that the request body contains a list of dictionaries
+        if not isinstance(request.data, list):
+            return Response({"error": "Invalid data format. Expected a list of attendance records."}, status=status.HTTP_400_BAD_REQUEST)
+
+        for rec in request.data:
+            try:
+                # Ensure the record contains 'id' and 'present' keys
+                reg_id = rec['id']
+                is_pres = rec['present']
+                
+                # Update the `is_present` field for the corresponding Registration record
+                Registration.objects.filter(id=reg_id).update(is_present=is_pres)
+
+            except KeyError:
+                return Response({"error": "Each record must contain 'id' and 'present' fields."}, status=status.HTTP_400_BAD_REQUEST)
+            except Registration.DoesNotExist:
+                return Response({"error": f"Registration with id {reg_id} does not exist."}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response({"detail": "Day 1 attendance updated successfully."}, status=status.HTTP_200_OK)
+    
+
+# search user by student number 
+class SearchUserByStudentNumberView(APIView):
+    """
+    GET a student number → return the registration record with that student number.
+    """
+    def get(self, request, *args, **kwargs):
+        student_number = request.query_params.get('student_number', None)
+        if not student_number:
+            return Response({"error": "Student number is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            registration = Registration.objects.get(student_number=student_number)
+            serializer = RegistrationSerializer(registration)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Registration.DoesNotExist:
+            return Response({"error": "Registration not found."}, status=status.HTTP_404_NOT_FOUND)

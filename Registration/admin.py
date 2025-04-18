@@ -5,7 +5,7 @@ from .models import Registration
 @admin.register(Registration)
 class RegistrationAdmin(admin.ModelAdmin):
     # Fields to display in the list view
-    list_display = ('id','full_name', 'student_number', 'branch', 'year', 'gender', 'email', 'payment_status', 'is_email_verified', 'created_at')
+    list_display = ('id','full_name', 'student_number', 'branch', 'is_present','year','phone', 'gender', 'email', 'payment_status', 'is_email_verified', 'created_at')
     
     # Fields to add links to the detail view
     list_display_links = ('full_name', 'student_number')

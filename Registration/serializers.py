@@ -76,6 +76,21 @@ class EmailStatusCheckSerializer(serializers.Serializer):
     
 
 class StatusSerializer(serializers.ModelSerializer):
+    # send only success user data to frontend
+    id = serializers.IntegerField()
+    full_name = serializers.CharField(max_length=100)
+    phone = serializers.CharField(max_length=12)
+    email = serializers.EmailField()
+    student_number = serializers.CharField(max_length=10)
+    created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
+
+    
+    
     class Meta:
         model = Registration
-        fields = ['full_name', 'payment_status', 'phone', 'email', 'created_at']
+        fields = ['id','full_name', 'phone', 'email','student_number', 'created_at']
+
+
+class Day1AttendanceSerializer(serializers.Serializer):
+    id = serializers.IntegerField()      
+    present = serializers.BooleanField()

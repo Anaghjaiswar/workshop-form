@@ -96,6 +96,9 @@ class Registration(models.Model):
     order_id = models.CharField(max_length=100, blank=True, null=True) 
     payment_signature = models.CharField(max_length=255, blank=True, null=True)
 
+    # attendance feild
+    is_present = models.BooleanField(default=False)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
