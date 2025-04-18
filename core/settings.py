@@ -93,6 +93,7 @@ RAZORPAY_WEBHOOK_SECRET = config('RAZORPAY_WEBHOOK_SECRET')
 CORS_ALLOWED_ORIGINS = [
     "https://render.csiakgec.co.in", 
     "http://localhost:3000", 
+    "https://registrations-pink.vercel.app",
 ]
 
 # Allow cookies and credentials to be sent along with requests

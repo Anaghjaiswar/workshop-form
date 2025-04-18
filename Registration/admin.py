@@ -11,7 +11,7 @@ class RegistrationAdmin(admin.ModelAdmin):
     list_display_links = ('full_name', 'student_number')
     
     # Fields to filter the list view
-    list_filter = ('branch', 'year', 'gender', 'living_type', 'payment_status', 'is_email_verified')
+    list_filter = ('branch', 'year', 'gender', 'living_type', 'payment_status', 'is_email_verified','is_present')
     
     # Fields to enable search functionality
     search_fields = ('full_name', 'student_number', 'email', 'phone')
@@ -39,7 +39,7 @@ class RegistrationAdmin(admin.ModelAdmin):
     )
     
     # Custom actions
-    actions = ['mark_payment_success', 'mark_email_verified']
+    actions = ['mark_payment_success', 'mark_email_verified','mark_attendance']
 
     # Admin methods to perform bulk updates
     @admin.action(description="Mark selected registrations as Payment Success")
@@ -51,3 +51,8 @@ class RegistrationAdmin(admin.ModelAdmin):
     def mark_email_verified(self, request, queryset):
         queryset.update(is_email_verified=True)
         self.message_user(request, "Selected registrations marked as Email Verified.")
+
+    @admin.action(description="Mark selected registrations as Present")
+    def mark_attendance(self, request, queryset):
+        queryset.update(is_present=False)
+        self.message_user(request, "Selected registrations marked as Present.")
